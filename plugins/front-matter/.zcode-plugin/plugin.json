@@ -1,0 +1,9 @@
+{
+  "name": "front-matter",
+  "version": "0.1.0",
+  "description": "Front Matter VS Code 扩展使用指南：可视化管理 Hugo 内容元数据、SEO 检查、草稿状态管理与实时预览。",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills"
+}

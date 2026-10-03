@@ -1,0 +1,17 @@
+# Hugo 构建产物
+public/
+resources/
+.hugo_build.lock
+
+# Node 依赖
+node_modules/
+
+# Hugo 模块缓存（Go 工作区文件）
+go.sum
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+
+# ZCode / 工具会话状态
+.mimosa/

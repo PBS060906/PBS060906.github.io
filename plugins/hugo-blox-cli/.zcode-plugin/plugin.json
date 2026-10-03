@@ -1,0 +1,9 @@
+{
+  "name": "hugo-blox-cli",
+  "version": "0.1.0",
+  "description": "Hugo Blox CLI（原 Wowchemy CLI）学术内容批量导入指南：一键从 BibTeX 导入论文、自动生成出版物页面、快速创建文章与项目模板。",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills"
+}

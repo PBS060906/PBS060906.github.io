@@ -1,0 +1,57 @@
+{
+  "name": "dev-workspace-3cbc6b44",
+  "plugins": [
+    {
+      "name": "giscus",
+      "source": "./giscus",
+      "version": "0.1.0",
+      "description": "Giscus 开源评论系统集成指南：为静态站点（Hugo/Jekyll/VitePress 等）基于 GitHub Discussions 添加无广告评论互动。",
+      "displayName": "Giscus 评论系统",
+      "displayName_i18n": {
+        "zh-CN": "Giscus 评论系统"
+      },
+      "description_i18n": {
+        "zh-CN": "为静态站点集成基于 GitHub Discussions 的开源评论系统"
+      }
+    },
+    {
+      "name": "pagefind",
+      "source": "./pagefind",
+      "version": "0.1.0",
+      "description": "Pagefind 纯静态站内搜索集成指南：为 Hugo/Jekyll/Eleventy 等静态站点提供毫秒级全文搜索，支持中文分词与代码片段搜索。",
+      "displayName": "Pagefind 站内搜索",
+      "displayName_i18n": {
+        "zh-CN": "Pagefind 站内搜索"
+      },
+      "description_i18n": {
+        "zh-CN": "为静态站点提供毫秒级全文搜索，支持中文分词"
+      }
+    },
+    {
+      "name": "hugo-blox-cli",
+      "source": "./hugo-blox-cli",
+      "version": "0.1.0",
+      "description": "Hugo Blox CLI（原 Wowchemy CLI）学术内容批量导入指南：一键从 BibTeX 导入论文、自动生成出版物页面、快速创建文章与项目模板。",
+      "displayName": "Hugo Blox CLI",
+      "displayName_i18n": {
+        "zh-CN": "Hugo Blox CLI"
+      },
+      "description_i18n": {
+        "zh-CN": "学术内容批量导入与模板生成工具"
+      }
+    },
+    {
+      "name": "front-matter",
+      "source": "./front-matter",
+      "version": "0.1.0",
+      "description": "Front Matter VS Code 扩展使用指南：可视化管理 Hugo 内容元数据、SEO 检查、草稿状态管理与实时预览。",
+      "displayName": "Front Matter",
+      "displayName_i18n": {
+        "zh-CN": "Front Matter"
+      },
+      "description_i18n": {
+        "zh-CN": "VS Code 中可视化管理 Hugo 内容元数据与 SEO"
+      }
+    }
+  ]
+}

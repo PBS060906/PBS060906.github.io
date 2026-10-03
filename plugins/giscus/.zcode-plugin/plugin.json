@@ -1,0 +1,9 @@
+{
+  "name": "giscus",
+  "version": "0.1.0",
+  "description": "Giscus 开源评论系统集成指南：为静态站点（Hugo/Jekyll/VitePress 等）基于 GitHub Discussions 添加无广告评论互动。",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills"
+}

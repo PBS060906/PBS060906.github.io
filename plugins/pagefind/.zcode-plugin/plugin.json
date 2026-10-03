@@ -1,0 +1,9 @@
+{
+  "name": "pagefind",
+  "version": "0.1.0",
+  "description": "Pagefind 纯静态站内搜索集成指南：为 Hugo/Jekyll/Eleventy 等静态站点提供毫秒级全文搜索，支持中文分词与代码片段搜索。",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills"
+}
