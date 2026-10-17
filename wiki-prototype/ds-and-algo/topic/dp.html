@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>动态规划 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="ds-and-algo" data-page="ds-and-algo/topic/dp" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>动态规划</h1>
+        <p>动态规划 = <strong>把原问题拆成重叠子问题，每个子问题只求解一次</strong>。适用条件：最优子结构 + 重叠子问题。</p>
+
+        <h2>解题框架</h2>
+
+        <ol>
+          <li><strong>定义状态</strong>：<code>dp[i]</code> 表示什么（最关键的一步）；</li>
+          <li><strong>状态转移方程</strong>：<code>dp[i]</code> 如何由更小的子问题推出；</li>
+          <li><strong>初始化与边界</strong>：递推的起点；</li>
+          <li><strong>遍历顺序</strong>：保证计算 <code>dp[i]</code> 时依赖项已就绪；</li>
+          <li><strong>空间优化</strong>：滚动数组压缩维度。</li>
+        </ol>
+
+        <h2>经典模型</h2>
+
+        <h3>线性 DP：最长上升子序列</h3>
+
+        <div class="math-block"><var>dp</var><sub><var>i</var></sub> = max<sub><var>j</var> &lt; <var>i</var>, <var>a</var><sub><var>j</var></sub> &lt; <var>a</var><sub><var>i</var></sub></sub>(<var>dp</var><sub><var>j</var></sub>) + 1</div>
+
+        <pre><code class="language-cpp">for (int i = 0; i &lt; n; i++) {
+    dp[i] = 1;
+    for (int j = 0; j &lt; i; j++)
+        if (a[j] &lt; a[i]) dp[i] = max(dp[i], dp[j] + 1);
+}</code></pre>
+
+        <p>贪心 + 二分可将复杂度优化到 <var>O</var>(<var>n</var> log <var>n</var>)。</p>
+
+        <h3>背包 DP</h3>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>模型</th><th>转移方程</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>0-1 背包</td><td><code>dp[j] = max(dp[j], dp[j-w]+v)</code>，<strong>j 倒序</strong></td></tr>
+              <tr><td>完全背包</td><td>同上，<strong>j 正序</strong></td></tr>
+              <tr><td>分组背包</td><td>枚举每组"选哪一件"</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>区间 DP：石子合并</h3>
+
+        <pre><code class="language-cpp">// dp[l][r] = 合并区间 [l, r] 的最小代价
+for (int len = 2; len &lt;= n; len++)
+    for (int l = 0, r = l + len - 1; r &lt; n; l++, r++) {
+        dp[l][r] = INF;
+        for (int k = l; k &lt; r; k++)
+            dp[l][r] = min(dp[l][r], dp[l][k] + dp[k+1][r] + sum(l, r));
+    }</code></pre>
+
+        <h3>树形 DP：没有上司的舞会</h3>
+
+        <p>树没有环，先<strong>把无根树转成有根树</strong>：任选一点作根，从根 DFS 确定父子关系，状态就能挂在“以 <var>u</var> 为根的子树”上。舞会问题：职员和直属上司不能同时参加，求最大快乐值之和。</p>
+
+        <pre><code class="language-cpp">// f[u][0/1]：u 不参加 / 参加时，其子树的最大快乐值
+void dfs(int u) {
+    f[u][1] = happy[u];
+    for (int v : g[u]) {                  // v 是 u 的直接下属
+        dfs(v);
+        f[u][0] += max(f[v][0], f[v][1]); // 上司不来，下属随意
+        f[u][1] += f[v][0];               // 上司来了，下属不能来
+    }
+}
+// 答案：max(f[root][0], f[root][1])，root 为转有根树后的树根</code></pre>
+
+        <h3>状压 DP：旅行商问题 (TSP)</h3>
+
+        <p>当 <var>n</var> &le; 20 时，可以把<strong>集合压进二进制位</strong>：第 <var>i</var> 位为 1 表示第 <var>i</var> 个元素在集合中。TSP 要求经过每个城市恰好一次再回到起点，状压解法复杂度 <var>O</var>(<var>n</var> &middot; 2<sup><var>n</var></sup>)。</p>
+
+        <pre><code class="language-cpp">// dp[S][u]：已访问集合为 S、当前在城市 u 的最小总路程
+memset(dp, 0x3f, sizeof dp);  dp[1][0] = 0;   // 从 0 号城市出发
+for (int S = 1; S &lt; (1 &lt;&lt; n); S++)
+    for (int u = 0; u &lt; n; u++)
+        if (S &gt;&gt; u &amp; 1)
+            for (int v = 0; v &lt; n; v++)
+                if (!(S &gt;&gt; v &amp; 1))
+                    dp[S | 1 &lt;&lt; v][v] = min(dp[S | 1 &lt;&lt; v][v], dp[S][u] + w[u][v]);
+// 答案：min(dp[(1 &lt;&lt; n) - 1][u] + w[u][0])，枚举最后一个返回的城市</code></pre>
+
+        <p>状压常用位运算技巧：</p>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>表达式</th><th>含义</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>S &gt;&gt; i &amp; 1</code></td><td>判断第 <var>i</var> 个元素是否在集合中</td></tr>
+              <tr><td><code>S | 1 &lt;&lt; i</code></td><td>把第 <var>i</var> 个元素加入集合</td></tr>
+              <tr><td><code>S &amp; ~(1 &lt;&lt; i)</code></td><td>把第 <var>i</var> 个元素移出集合</td></tr>
+              <tr><td><code>S &amp; (S - 1)</code></td><td>消去最低位的 1，可用来判断 2 的幂</td></tr>
+              <tr><td><code>(1 &lt;&lt; n) - 1</code></td><td><var>n</var> 个元素的全集</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>常见线性模型一览</h2>
+
+        <p>四个最常考的线性模型，把状态定义与转移放在一起对照记忆：</p>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>模型</th><th>状态定义</th><th>转移方程</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>LIS 最长上升子序列</td><td><code>dp[i]</code>：以 <code>a[i]</code> 结尾的 LIS 长度</td><td><code>dp[i] = max(dp[j] + 1)</code>，其中 <code>j &lt; i</code> 且 <code>a[j] &lt; a[i]</code></td></tr>
+              <tr><td>LCS 最长公共子序列</td><td><code>dp[i][j]</code>：A 前 i 个与 B 前 j 个字符的 LCS 长度</td><td>相等：<code>dp[i-1][j-1] + 1</code>；否则 <code>max(dp[i-1][j], dp[i][j-1])</code></td></tr>
+              <tr><td>编辑距离</td><td><code>dp[i][j]</code>：A 前 i 个字符变成 B 前 j 个的最少操作数</td><td>相等：<code>dp[i-1][j-1]</code>；否则 <code>min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]) + 1</code></td></tr>
+              <tr><td>最大子段和</td><td><code>dp[i]</code>：以 <code>a[i]</code> 结尾的最大子段和</td><td><code>dp[i] = max(dp[i-1] + a[i], a[i])</code>，答案取全局最大值</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>DP 与记忆化搜索</h2>
+
+        <p>同一个状态设计，既能<strong>自底向上递推</strong>，也能<strong>自顶向下记忆化搜索</strong>。后者先写暴力递归、再加缓存，“要什么算什么”，往往更好想。以 LIS 为例，两种写法完全等价：</p>
+
+        <pre><code class="language-cpp">// 自顶向下：记忆化搜索
+int dfs(int i) {
+    int &amp;res = memo[i];
+    if (res) return res;                 // 已计算过，直接返回
+    res = 1;
+    for (int j = 0; j &lt; i; j++)
+        if (a[j] &lt; a[i]) res = max(res, dfs(j) + 1);
+    return res;
+}
+
+// 自底向上：递推（答案为 max(dp[0..n-1])）
+for (int i = 0; i &lt; n; i++) {
+    dp[i] = 1;
+    for (int j = 0; j &lt; i; j++)
+        if (a[j] &lt; a[i]) dp[i] = max(dp[i], dp[j] + 1);
+}</code></pre>
+
+        <p>如何选：转移“向前看”不直观、状态难以按序枚举时，记忆化搜索更自然；递归深度可能很大时改用递推，避免爆栈。</p>
+
+        <h2>常见优化手段</h2>
+
+        <ul>
+          <li><strong>滚动数组</strong>：<code>dp[i]</code> 只依赖 <code>dp[i-1]</code> 时压掉一维；</li>
+          <li><strong>前缀和优化</strong>：转移是区间求和时预处理前缀；</li>
+          <li><strong>单调队列优化</strong>：滑动窗口最值，见 图论 之外的专题；</li>
+          <li><strong>矩阵快速幂</strong>：把线性递推（如斐波那契 <code>f(n) = f(n-1) + f(n-2)</code>）写成矩阵的幂，配合快速幂把 <var>O</var>(<var>n</var>) 加速到 <var>O</var>(log <var>n</var>)。</li>
+        </ul>
+
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <p>能对新手讲清楚"状态为什么这样定义、转移为什么正确"，才算真正掌握该模型。</p>
+        </div>
+
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <p>刷题按模型分类：集中一段时间专攻一个模型（如背包专题），吃透再换下一个；每题追求<strong>一题多解</strong>——先写暴力，再写标准 DP，最后尝试优化，比多刷十道新题收获更大。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

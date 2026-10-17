@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTML - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/frontend/html" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>HTML</h1>
+        <p>HTML 用标签描述文档的<strong>结构与语义</strong>。写好 HTML 的关键是"选对标签表达含义"——浏览器据此构建 DOM 树，CSS 与 JS 都挂在 DOM 上工作。</p>
+
+        <h2>文档骨架</h2>
+
+        <pre><code class="language-html">&lt;!doctype html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;            &lt;!-- 字符编码，放最前防止乱码 --&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;  &lt;!-- 移动端适配关键 --&gt;
+  &lt;title&gt;页面标题&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;header&gt;页头&lt;/header&gt;
+  &lt;main&gt;主体，全页唯一&lt;/main&gt;
+  &lt;footer&gt;页脚&lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <ul>
+          <li><code>lang</code> 帮助读屏器选择发音、搜索引擎判断语言；</li>
+          <li><code>viewport</code> 缺失时移动端按桌面宽度缩放显示，响应式布局无从谈起。</li>
+        </ul>
+
+        <p>head 里的其他常用配置：<code>&lt;meta name="description"&gt;</code>（搜索结果摘要）、<code>&lt;link rel="icon"&gt;</code>（站点图标）。</p>
+
+        <h2>语义化标签</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>标签</th><th>语义</th></tr></thead>
+            <tbody>
+              <tr><td><code>header</code></td><td>页头或区块头部</td></tr>
+              <tr><td><code>nav</code></td><td>导航区域</td></tr>
+              <tr><td><code>main</code></td><td>页面主体，全页唯一</td></tr>
+              <tr><td><code>article</code></td><td>独立成篇的内容</td></tr>
+              <tr><td><code>section</code></td><td>主题分组</td></tr>
+              <tr><td><code>aside</code></td><td>侧边关联内容</td></tr>
+              <tr><td><code>footer</code></td><td>页脚或区块尾部</td></tr>
+              <tr><td><code>time</code></td><td>机器可读的时间</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <p>强调语义化：利于 SEO、无障碍访问（读屏器）、可维护性，三者同源于"结构即含义"。</p>
+        </div>
+
+        <h2>属性与全局规则</h2>
+
+        <ul>
+          <li><strong>全局属性</strong>：<code>id</code>（全页唯一）、<code>class</code>（样式与脚本钩子，可重复）、<code>data-*</code>（自定义数据）、<code>hidden</code>（隐藏元素）；</li>
+          <li><strong>布尔属性</strong>：<code>disabled</code>、<code>checked</code>、<code>required</code> 写属性名即生效；</li>
+          <li><strong>空元素</strong>：<code>&lt;img&gt;</code>、<code>&lt;br&gt;</code>、<code>&lt;input&gt;</code>、<code>&lt;meta&gt;</code> 无内容，无需闭合标签。</li>
+        </ul>
+
+        <h2>链接与多媒体</h2>
+
+        <pre><code class="language-html">&lt;a href="https://example.com" target="_blank" rel="noopener"&gt;在新窗口打开外链&lt;/a&gt;
+&lt;img src="photo.jpg" alt="西湖断桥雪景" width="600" loading="lazy"&gt;</code></pre>
+
+        <ul>
+          <li><code>alt</code> 必写：读屏器朗读它，图片加载失败时也靠它兜底；</li>
+          <li><code>loading="lazy"</code> 让视口外的图片滚动到附近才加载；</li>
+          <li>外链加 <code>rel="noopener"</code>，防止新页面通过 <code>window.opener</code> 操控原页面。</li>
+        </ul>
+
+        <h2>块级与行内</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>类别</th><th>特点</th><th>典型标签</th></tr></thead>
+            <tbody>
+              <tr><td>块级</td><td>独占一行，可设宽高</td><td><code>div</code>、<code>p</code>、<code>h1</code>-<code>h6</code>、<code>ul</code></td></tr>
+              <tr><td>行内</td><td>排在一行内，宽高由内容决定</td><td><code>span</code>、<code>a</code>、<code>strong</code>、<code>em</code></td></tr>
+              <tr><td>行内块</td><td>一行排列且可设宽高</td><td><code>img</code>、<code>input</code>、<code>button</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>CSS 的 <code>display</code> 可以随意改写三者，理解默认行为有助于排查布局问题。</p>
+
+        <h2>表格与列表</h2>
+
+        <pre><code class="language-html">&lt;table&gt;
+  &lt;caption&gt;上半年销量&lt;/caption&gt;
+  &lt;thead&gt;&lt;tr&gt;&lt;th&gt;季度&lt;/th&gt;&lt;th&gt;销售额&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;Q1&lt;/td&gt;&lt;td&gt;120 万&lt;/td&gt;&lt;/tr&gt;
+    &lt;tr&gt;&lt;td&gt;Q2&lt;/td&gt;&lt;td&gt;150 万&lt;/td&gt;&lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+
+        <ul>
+          <li><code>th</code> 是表头单元格，默认加粗居中，读屏器借此把列名和单元格关联起来；</li>
+          <li>无序列表 <code>ul/li</code>、有序列表 <code>ol/li</code>、描述列表 <code>dl/dt/dd</code> 各有语义，按含义选用。</li>
+        </ul>
+
+        <h2>表单要点</h2>
+
+        <pre><code class="language-html">&lt;form action="/api/submit" method="post"&gt;
+  &lt;label for="email"&gt;邮箱&lt;/label&gt;
+  &lt;input id="email" name="email" type="email" required&gt;
+  &lt;button type="submit"&gt;提交&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+        <ul>
+          <li><code>label</code> 的 <code>for</code> 与输入框 <code>id</code> 绑定，点击文字即可聚焦；</li>
+          <li>原生校验（<code>required</code>、<code>type=email</code>）优先于 JS 校验；</li>
+          <li>控件<strong>必须有 <code>name</code></strong> 才会随表单提交到服务端；</li>
+          <li>常用输入类型：<code>text</code> / <code>email</code> / <code>number</code> / <code>password</code> / <code>checkbox</code> / <code>radio</code> / <code>file</code>，移动端会弹出对应键盘；</li>
+          <li>下拉与多行文本用 <code>&lt;select&gt;/&lt;option&gt;</code>、<code>&lt;textarea&gt;</code>。</li>
+        </ul>
+
+        <h2>注释与字符转义</h2>
+
+        <pre><code class="language-html">&lt;!-- 注释不会渲染，但源码里可见，不要在注释里放敏感信息 --&gt;
+&lt;p&gt;1 &amp;lt; 2 &amp;amp;&amp;amp; 2 &amp;lt; 3&lt;/p&gt;</code></pre>
+
+        <p>常用实体：<code>&amp;lt;</code>（&lt;）、<code>&amp;gt;</code>（&gt;）、<code>&amp;amp;</code>（&amp;）、<code>&amp;quot;</code>（"）、<code>&amp;copy;</code>（©）。正文里要展示 <code>&lt;</code>、<code>&amp;</code> 等保留字符时必须转义。</p>
+
+        <h2>实践要点</h2>
+
+        <ul>
+          <li>用语义标签替代层层嵌套的 <code>&lt;div&gt;</code>（div soup），结构可读性天差地别；</li>
+          <li>图片必写 <code>alt</code>，表单控件必配 <code>label</code>；</li>
+          <li>结构与样式分离：不写内联 <code>style</code>，不用 <code>&lt;center&gt;</code>、<code>&lt;font&gt;</code> 等废弃标签；</li>
+          <li>标题只用一个 <code>h1</code>，层级递进不跳级；</li>
+          <li>自查方法：遮住视觉仅读标签，能否还原出页面的内容大纲。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAG - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/application/rag" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>RAG</h1>
+        <p>RAG（检索增强生成）在生成前先<strong>从外部知识库检索相关内容</strong>注入上下文，解决三类问题：模型知识过时、私有知识缺失、以及无中生有的幻觉。一句话概括：让模型「开卷考试」。</p>
+
+        <h2>基本流程</h2>
+        <div class="flow">
+          <span class="flow-node">用户问题</span><span class="flow-arrow">→</span>
+          <span class="flow-node">检索 Retriever（知识库：向量/混合）</span><span class="flow-arrow">→</span>
+          <span class="flow-node">增强 Augment：拼装上下文</span><span class="flow-arrow">→</span>
+          <span class="flow-node">生成 Generator</span>
+        </div>
+        <p>整条链路分<strong>离线</strong>（建库）与<strong>在线</strong>（检索生成）两段。检索质量决定上限——上下文里没有的信息，模型再强也答不出；生成质量决定下限。多数 RAG 项目效果差，根源在离线的切分与入库，而不是模型本身。</p>
+
+        <h2>离线管线</h2>
+
+        <h3>Chunking 切分</h3>
+        <p>切分粒度是 RAG 质量的第一决定因素：块太小则上下文不完整，块太大则检索精度被稀释、挤占上下文窗口。</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>策略</th><th>做法</th><th>适用</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>固定长度</td><td>按 Token 数切，块间留 10%~20% 重叠</td><td>通用基线</td></tr>
+              <tr><td>递归切分</td><td>按段落 → 句子 → 字符逐级回退</td><td>LangChain 默认</td></tr>
+              <tr><td>结构感知</td><td>按 Markdown 标题、代码函数边界切</td><td>文档、代码库</td></tr>
+              <tr><td>语义切分</td><td>相邻句向量相似度骤降处断开</td><td>长文本</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>常用块大小 256~512 Token。进阶做法 <strong>parent-child</strong>：用小块做检索（准），命中后取其父块或整节喂给模型（全）。</p>
+
+        <h3>Embedding 编码</h3>
+        <ul>
+          <li>中文开源常用 <strong>bge 系列（BAAI）</strong>，通用英文可选 OpenAI text-embedding-3 等；</li>
+          <li>查询与文档通常要分别加<strong>指令前缀</strong>（如 bge 查询侧要求「为这个句子生成表示以用于检索相关文章：」）；</li>
+          <li>向量归一化后用余弦相似度（等价于内积）检索。</li>
+        </ul>
+
+        <h3>入库与索引</h3>
+        <p>向量库选型：FAISS（库而非服务，单机实验首选）、pgvector（复用 Postgres，中小规模省事）、Milvus / Qdrant（分布式生产级）、Elasticsearch 8+（倒排 + 向量，混合检索顺路）。索引结构常用 <strong>HNSW</strong>（分层图索引，高召回低延迟、内存开销大）或 IVF（聚类倒排，内存友好）。</p>
+
+        <h2>查询理解与改写</h2>
+        <ul>
+          <li><strong>指代消解 / 补全</strong>：结合多轮历史把「它多少钱」改写成「iPhone 15 多少钱」；</li>
+          <li><strong>Multi-Query</strong>：让 LLM 把问题改写成多个角度的查询，多路检索后合并；</li>
+          <li><strong>HyDE</strong>：先让 LLM 生成一段「假设性答案」，用假设答案做向量检索——答案与文档的语义距离往往比问题更近；</li>
+          <li><strong>改写有成本</strong>：简单查询直接检索即可，改写与多路扩展留给复杂查询。</li>
+        </ul>
+
+        <h2>检索策略</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>策略</th><th>原理</th><th>适用</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>向量检索</td><td>余弦相似度</td><td>语义模糊匹配</td></tr>
+              <tr><td>关键词检索</td><td>BM25</td><td>专有名词、编号</td></tr>
+              <tr><td>混合检索</td><td>两者融合 + RRF</td><td>生产默认</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>向量检索擅长语义、不擅长精确符号；BM25 相反。生产环境默认<strong>混合检索</strong>，用 <strong>RRF（倒数排名融合）</strong>合并多路结果：</p>
+        <div class="math-block">
+          RRF(<var>d</var>) = &sum;<sub><var>r</var> &isin; <var>R</var></sub> 1 / (<var>k</var> + rank<sub><var>r</var></sub>(<var>d</var>))，<var>k</var> &asymp; 60
+        </div>
+        <pre><code class="language-python">def rrf_fusion(result_lists, k=60):
+    """多路检索结果做 RRF 融合，result_lists 每路按相关性降序。"""
+    scores = {}
+    for doc_ids in result_lists:
+        for rank, doc_id in enumerate(doc_ids):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank + 1)
+    return sorted(scores, key=scores.get, reverse=True)
+</code></pre>
+
+        <h3>Reranker 重排</h3>
+        <p>召回阶段追求快（粗召回 Top 50），排序阶段追求准。两种排序模型的结构差异：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>结构</th><th>编码方式</th><th>精度 / 速度</th><th>用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Bi-encoder（双塔）</td><td>查询与文档独立编码</td><td>快，精度有限</td><td>离线建库、粗召回</td></tr>
+              <tr><td>Cross-Encoder</td><td>查询与文档拼接后逐对打分</td><td>精度显著更高，慢</td><td>小候选集精排</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>典型配置：混合检索召回 Top 50 → Cross-Encoder（如 bge-reranker）精排 → Top 5 注入上下文，精度提升显著、延迟可控。</p>
+
+        <h2>生成侧要点</h2>
+        <ul>
+          <li>上下文中给每段<strong>引用来源编号</strong>，要求模型作答时标注，降低幻觉并便于核查；</li>
+          <li>重要的内容放在上下文的<strong>开头或结尾</strong>——模型对中间部分注意力偏弱（lost in the middle）；</li>
+          <li>检索为空或分数过低时，指令要求模型明确回答「知识库中未找到」，<strong>不要硬编</strong>；</li>
+          <li>上下文模板结构化：<code>系统指令 → 引用材料（带编号） → 问题</code>；</li>
+          <li>控制注入块数，宁缺毋滥：无关块会显著拉高幻觉率并挤占窗口。</li>
+        </ul>
+
+        <h2>评估体系：RAGAS</h2>
+        <p>两层评估：<strong>检索层</strong>看 Recall@K、MRR（有没有检到对的块），<strong>生成层</strong>看忠实度与答案相关性。答案错了，先看是「没检到」还是「没答好」。<a href="https://docs.ragas.io/" target="_blank" rel="noopener">RAGAS</a> 把这套思想标准化为四个自动化指标（用 LLM 代替人工逐项打分）：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>指标</th><th>衡量</th><th>归属</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Context Precision</td><td>检到的块里相关块排得靠不靠前</td><td>检索</td></tr>
+              <tr><td>Context Recall</td><td>必要信息是否都被检到</td><td>检索</td></tr>
+              <tr><td>Faithfulness</td><td>答案是否忠于上下文（幻觉程度）</td><td>生成</td></tr>
+              <tr><td>Answer Relevancy</td><td>答案与问题的相关性</td><td>生成</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>排障路径：Context 指标低 → 改切分 / embedding / 混合检索；Faithfulness 低 → 改提示词约束、换模型、收紧检索质量。</p>
+
+        <h2>幻觉缓解</h2>
+        <ol>
+          <li><strong>证据约束</strong>：提示词明确「仅依据提供的材料作答，材料中没有就说明」；</li>
+          <li><strong>引用强制</strong>：要求逐句标注来源编号，无来源的陈述不出现；</li>
+          <li><strong>降低温度 + 拒答出口</strong>：给模型一个体面的「我不知道」，比逼它编造好；</li>
+          <li><strong>后验校验</strong>：用 NLI 模型或另一个 LLM 核对答案与引用是否一致，不一致则重试或降级；</li>
+          <li><strong>源头治理</strong>：过时文档定期重建索引——答案的时效性受知识库更新节奏限制。</li>
+        </ol>
+
+        <h2>进阶形态</h2>
+        <ul>
+          <li><strong>Agentic RAG</strong>：把检索包装成工具，让模型自主决定检索时机、查询词与轮数，配合自我反思修正查询；</li>
+          <li><strong>GraphRAG</strong>：离线抽取实体与关系构建知识图谱，擅长全局性、汇总型问题；</li>
+          <li><strong>多模态 RAG</strong>：对图表、截图用多模态 embedding 检索，或先用视觉模型解析为文字再入库。</li>
+        </ul>
+
+        <h2>实践要点</h2>
+        <ol>
+          <li>先建评测集再调优：几十条标注问答 + RAGAS，胜过凭感觉改参数；</li>
+          <li>切分策略与文档结构强相关，Markdown / 代码务必结构感知切分；</li>
+          <li>生产默认混合检索 + Reranker，这条组合拳覆盖大多数场景；</li>
+          <li>复杂问题（多跳、汇总）用 Agentic RAG：让模型自己决定何时检索、检索什么、检索几轮；</li>
+          <li>表格与代码是切分重灾区：表格转 Markdown 再嵌入，代码按函数切并保留文件路径上下文；</li>
+          <li>知识库质量决定上限：文档去重、更新与生命周期管理常被低估。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

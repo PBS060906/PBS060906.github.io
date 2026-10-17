@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高等数学 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/math/advanced-math" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>高等数学</h1>
+        <p>高等数学为机器学习提供语言：<strong>导数描述变化，积分描述累积，级数描述极限</strong>。本页不求全面，只梳理与优化、概率、数值计算直接相关的核心工具。</p>
+        <h2>极限与连续</h2>
+        <p>极限是整个微积分的地基：导数是差商的极限，积分是和式的极限；函数在某点连续即"极限值等于函数值"。一个经典极限给出自然对数的底：</p>
+        <div class="math-block">lim<sub><var>n</var>→&infin;</sub> (1 + 1/<var>n</var>)<sup><var>n</var></sup> = <var>e</var></div>
+        <p>求未定式极限（如 0/0 型）可用洛必达法则：分子分母分别求导后再取极限。</p>
+        <h2>微分学</h2>
+        <h3>导数的几何意义</h3>
+        <p><var>f</var>&prime;(<var>x</var><sub>0</sub>) 是曲线在 <var>x</var><sub>0</sub> 处切线的斜率，也是瞬时变化率；机器学习中的"梯度"就是导数在多元情形下的推广。常用基本导数与求导法则：</p>
+        <div class="math-block">(<var>x</var><sup><var>n</var></sup>)&prime; = <var>n</var><var>x</var><sup><var>n</var>&minus;1</sup>&ensp;(<var>e</var><sup><var>x</var></sup>)&prime; = <var>e</var><sup><var>x</var></sup>&ensp;(ln <var>x</var>)&prime; = 1/<var>x</var>&ensp;(sin <var>x</var>)&prime; = cos <var>x</var></div>
+        <div class="math-block">(<var>fg</var>)&prime; = <var>f</var>&prime;<var>g</var> + <var>f</var><var>g</var>&prime;&ensp;(<var>f</var>/<var>g</var>)&prime; = (<var>f</var>&prime;<var>g</var> &minus; <var>f</var><var>g</var>&prime;) / <var>g</var><sup>2</sup></div>
+        <p>导数的符号给出单调性，二阶导数的符号给出凹凸性；拐点是凹凸性改变的点，也是二阶导数变号的点。</p>
+        <h3>链式法则</h3>
+        <p>复合函数求导是反向传播的数学基础：若 <var>y</var> = <var>f</var>(<var>u</var>)、<var>u</var> = <var>g</var>(<var>x</var>)，则</p>
+        <div class="math-block">d<var>y</var>/d<var>x</var> = <var>f</var>&prime;(<var>g</var>(<var>x</var>)) &times; <var>g</var>&prime;(<var>x</var>)</div>
+        <p>神经网络层层嵌套，梯度正是靠链式法则从输出层逐层"回传"到输入层。</p>
+        <h3>微分中值定理</h3>
+        <p>罗尔定理与拉格朗日中值定理是"从导数性质推断函数性质"的桥梁：若 <var>f</var> 在 [<var>a</var>, <var>b</var>] 连续、在 (<var>a</var>, <var>b</var>) 可导，则存在 &xi; 使得</p>
+        <div class="math-block"><var>f</var>&prime;(&xi;) = (<var>f</var>(<var>b</var>) &minus; <var>f</var>(<var>a</var>)) / (<var>b</var> &minus; <var>a</var>)</div>
+        <h3>泰勒公式</h3>
+        <p>用多项式逼近函数，是优化与数值计算的基石：</p>
+        <div class="math-block"><var>f</var>(<var>x</var>) = &sum;<sub><var>n</var>=0</sub><sup>&infin;</sup> [<var>f</var><sup>(<var>n</var>)</sup>(<var>x</var><sub>0</sub>)/<var>n</var>!] (<var>x</var> &minus; <var>x</var><sub>0</sub>)<sup><var>n</var></sup></div>
+        <p>一阶泰勒展开 → 梯度下降；二阶泰勒展开 → 牛顿法：</p>
+        <div class="math-block"><var>x</var><sub><var>t</var>+1</sub> = <var>x</var><sub><var>t</var></sub> &minus; <var>f</var>&prime;(<var>x</var><sub><var>t</var></sub>) / <var>f</var>&Prime;(<var>x</var><sub><var>t</var></sub>)</div>
+        <p>常用麦克劳林展开（<var>x</var><sub>0</sub> = 0 处的泰勒级数）：<var>e</var><sup><var>x</var></sup> = &sum; <var>x</var><sup><var>n</var></sup>/<var>n</var>!；ln(1+<var>x</var>) = &sum; (&minus;1)<sup><var>n</var>&minus;1</sup><var>x</var><sup><var>n</var></sup>/<var>n</var>（&minus;1 &lt; <var>x</var> &le; 1）。</p>
+        <h2>积分学</h2>
+        <ul>
+          <li>不定积分是导数的逆运算；定积分 &int;<sub><var>a</var></sub><sup><var>b</var></sup> <var>f</var>(<var>x</var>)&thinsp;d<var>x</var> 表示曲线下面积，牛顿—莱布尼茨公式连接两者；</li>
+          <li>两条常用技巧：<strong>换元法</strong>（变量替换）与<strong>分部积分</strong>；</li>
+          <li>应用：面积、旋转体体积；概率密度函数在区间上的积分即事件概率，期望与方差都定义为积分。</li>
+        </ul>
+        <div class="math-block">&int;<sub><var>a</var></sub><sup><var>b</var></sup> <var>f</var>(<var>x</var>)&thinsp;d<var>x</var> = <var>F</var>(<var>b</var>) &minus; <var>F</var>(<var>a</var>)&ensp;&ensp;&int; <var>u</var>&thinsp;d<var>v</var> = <var>uv</var> &minus; &int; <var>v</var>&thinsp;d<var>u</var></div>
+        <div class="math-block"><var>E</var>[<var>X</var>] = &int; <var>x</var>&thinsp;<var>f</var>(<var>x</var>)&thinsp;d<var>x</var>&ensp;&ensp;Var(<var>X</var>) = &int; (<var>x</var> &minus; <var>E</var>[<var>X</var>])<sup>2</sup>&thinsp;<var>f</var>(<var>x</var>)&thinsp;d<var>x</var></div>
+        <h2>级数与极限</h2>
+        <p>最常用的是几何级数（等比数列求和）：</p>
+        <div class="math-block">&sum;<sub><var>n</var>=0</sub><sup>&infin;</sup> <var>a</var><var>r</var><sup><var>n</var></sup> = <var>a</var> / (1 &minus; <var>r</var>)&ensp;(|<var>r</var>| &lt; 1)</div>
+        <p>判断级数是否收敛是核心问题：等比级数与 p-级数 &sum; 1/<var>n</var><sup><var>p</var></sup>（<var>p</var> &gt; 1 时收敛）是最常用的参照。它出现在折扣回报（强化学习）、指数衰减（学习率退火）等场景中；动量系数 &beta; = 0.9 意味着历史梯度加权平均的"半衰期"约 7 步，同样源于等比求和。</p>
+        <h2>多元函数</h2>
+        <ul>
+          <li><strong>偏导数</strong>：固定其他变量、只对某一个变量求导；<strong>全微分</strong>把各方向的微小变化累加；</li>
+          <li><strong>梯度</strong> &nabla;<var>f</var> 指向函数值上升最快的方向，负梯度即最速下降方向；</li>
+          <li><strong>Hessian 矩阵</strong>（二阶偏导构成的矩阵）刻画曲率，判断极值点性质；</li>
+          <li><strong>拉格朗日乘数法</strong>处理带约束优化，是 KKT 条件的前置知识：<var>L</var>(<var>x</var>, &lambda;) = <var>f</var>(<var>x</var>) + &lambda;&thinsp;<var>g</var>(<var>x</var>)。</li>
+        </ul>
+        <p>极值的判定：一阶必要条件 &nabla;<var>f</var>(<var>x</var><sup>*</sup>) = 0；二阶充分条件由 Hessian 的正定性给出——正定是极小值，负定是极大值，不定则需进一步讨论。</p>
+        <h2>凸函数与优化</h2>
+        <ul>
+          <li><strong>凸集</strong>：集合内任意两点的连线仍在集合内；<strong>凸函数</strong>：<var>f</var>(&lambda;<var>x</var> + (1&minus;&lambda;)<var>y</var>) &le; &lambda;<var>f</var>(<var>x</var>) + (1&minus;&lambda;)<var>f</var>(<var>y</var>)；</li>
+          <li>凸函数的局部极小值就是全局极小值——这正是凸优化如此重要的原因；线性函数、各范数、<var>e</var><sup><var>x</var></sup>、<var>x</var><sup>2</sup> 都是凸的，非凸问题常被松弛成凸问题近似求解。</li>
+        </ul>
+        <p>梯度下降的极简骨架：</p>
+        <pre><code class="language-python">for _ in range(num_steps):
+    grad = compute_gradient(theta, X, y)
+    theta = theta - lr * grad    # 沿负梯度走一小步</code></pre>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · 与机器学习的联系</p>
+          <p>损失函数最小化 = 多元函数求极值；梯度下降 = 沿负梯度迭代；正则化 = 带约束优化。</p>
+        </div>
+        <h2>实践要点</h2>
+        <ol>
+          <li>见到复合结构（如 log&thinsp;&sigma;(<var>x</var>)）先想链式法则，逐层拆解再相乘；</li>
+          <li>手推一次"线性回归 + MSE"的梯度公式，是理解一切训练过程的最短路径；</li>
+          <li>学习率对应泰勒一阶近似的步长假设：步子太大会偏离近似成立的范围而发散；</li>
+          <li>遇到带约束问题（如最大间隔、概率单纯形）先检查拉格朗日 / KKT 是否适用；</li>
+          <li>对连乘的似然函数取对数，把连乘变连加，既好求导又避免数值下溢；</li>
+          <li>数值求导用中心差分 (<var>f</var>(<var>x</var>+<var>h</var>) &minus; <var>f</var>(<var>x</var>&minus;<var>h</var>)) / 2<var>h</var>，误差为 <var>O</var>(<var>h</var><sup>2</sup>)，比单边差分更精确。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

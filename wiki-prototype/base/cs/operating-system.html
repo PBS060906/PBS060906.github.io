@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>操作系统 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/cs/operating-system" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>操作系统</h1>
+        <p>操作系统管理软硬件资源，为上层应用提供抽象：<strong>进程 → CPU、虚拟内存 → 内存、文件 → 磁盘</strong>。理解操作系统，才能解释后端开发中并发、性能与稳定性问题从何而来。</p>
+        <h2>四大模块</h2>
+        <ul>
+          <li><strong>操作系统</strong>
+            <ul>
+              <li>进程管理——调度、并发与同步；</li>
+              <li>内存管理——虚拟内存、页表与置换；</li>
+              <li>文件系统——inode 与 VFS；</li>
+              <li>I/O 管理——多路复用与零拷贝。</li>
+            </ul>
+          </li>
+        </ul>
+        <p>本页按"进程 → 内存 → 文件与 I/O"的主线展开，进程调度与 I/O 的交叉点正是后端高并发的核心。</p>
+        <h2>用户态与内核态</h2>
+        <p>CPU 分为<strong>用户态</strong>与<strong>内核态</strong>两种特权级，内核态可执行特权指令、访问全部内存。应用程序通过<strong>系统调用</strong>（syscall）陷入内核请求服务（读写文件、创建进程、分配内存）；<strong>中断</strong>与异常是进入内核的另一入口——网卡、磁盘、时钟用中断通知内核，是异步事件处理的基石。</p>
+        <p>系统调用有固定开销（态切换 + 上下文保存），这是"批量读写缓冲区""<code>mmap</code> 减少拷贝"等优化存在的原因。常见调用如 <code>read</code> / <code>write</code> / <code>fork</code> / <code>execve</code>，<code>strace</code> 可逐条观察进程的调用轨迹；<code>fork</code> 的返回值有著名的"两次"现象——父进程得到子进程 PID，子进程得到 0，随后 <code>execve</code> 加载新程序镜像。</p>
+        <h2>进程管理</h2>
+        <h3>进程与线程</h3>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>维度</th><th>进程</th><th>线程</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>地址空间</td><td>独立</td><td>共享所在进程</td></tr>
+              <tr><td>切换开销</td><td>大（需切换页表）</td><td>小</td></tr>
+              <tr><td>通信方式</td><td>管道 / 共享内存 / 信号</td><td>直接读写共享变量</td></tr>
+              <tr><td>崩溃影响</td><td>互不影响</td><td>一个线程崩溃可能拖垮整个进程</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>线程分用户级与内核级：用户级切换快但一个阻塞全部阻塞，内核级由内核调度、能利用多核，现代 Linux 采用"一对一"模型。多进程稳（隔离好）、多线程快（共享省），服务端常见折中是多进程 + 每进程多线程（或协程）。</p>
+        <p>进程的典型生命周期：</p>
+        <div class="flow"><span class="flow-node">就绪</span><span class="flow-arrow">→</span><span class="flow-node">运行</span><span class="flow-arrow">→</span><span class="flow-node">阻塞</span></div>
+        <p>时间片用完回就绪；等待 I/O 或锁进入阻塞，事件发生重回就绪；运行结束即退出。<strong>上下文切换</strong>要保存寄存器、程序计数器等现场，进程还需切换页表，代价高于线程切换——高并发设计的核心目标之一就是减少切换次数。</p>
+        <h3>调度与并发</h3>
+        <ul>
+          <li>常见调度算法：FCFS、SJF、时间片轮转、多级反馈队列；核心权衡是吞吐量、响应时间与公平性，交互式系统更看重响应时间；</li>
+          <li>并发三问题：<strong>竞态条件、死锁、饥饿</strong>；</li>
+          <li>锁的常见坑：异常路径忘了解解锁（用 RAII / <code>with</code> / <code>defer</code> 托管）、粒度过大并发度下降、粒度过小开销上升、双重检查加锁需配合内存屏障防止指令重排。</li>
+        </ul>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>同步原语</th><th>适用场景</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>互斥锁 mutex</td><td>保护临界区，一次只允许一个线程进入</td></tr>
+              <tr><td>信号量 semaphore</td><td>控制同时访问某资源的数量（如缓冲区容量）</td></tr>
+              <tr><td>条件变量 condition</td><td>等待某个条件成立，必须与互斥锁配合使用</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>死锁的四个必要条件：<strong>互斥、占有且等待、不可剥夺、循环等待</strong>——破坏任意一条即可避免。工程上最常用"按固定顺序加锁"（破坏循环等待）与"一次性申请全部资源"（破坏占有且等待）。</p>
+        <p>经典的生产者-消费者问题，用信号量同时解决互斥与容量限制：</p>
+        <pre><code class="language-c">// 生产者-消费者（信号量版本，伪代码）
+semaphore mutex = 1, empty = N, full = 0;
+
+producer() {
+    while (true) {
+        item = produce();
+        P(empty); P(mutex);   // 先申请资源信号量，再申请互斥锁，顺序不能反
+        insert(item);
+        V(mutex); V(full);
+    }
+}</code></pre>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · P 操作顺序</p>
+          <p>若先 <code>P(mutex)</code> 再 <code>P(empty)</code>，缓冲区满时生产者会抱着锁睡眠，消费者却拿不到锁，直接死锁。</p>
+        </div>
+        <h2>内存管理</h2>
+        <ul>
+          <li><strong>虚拟内存</strong>：每个进程拥有独立的虚拟地址空间，通过页表映射到物理内存；</li>
+          <li><strong>页面置换</strong>：LRU、Clock 等算法决定淘汰哪一页；</li>
+          <li><strong>缺页中断</strong>：访问未映射页面时触发，由内核从磁盘调入数据。</li>
+        </ul>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>算法</th><th>思路</th><th>缺点</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>FIFO</td><td>淘汰最早进入的页</td><td>可能淘汰仍在使用的页</td></tr>
+              <tr><td>LRU</td><td>淘汰最久未访问的页</td><td>精确实现硬件开销大</td></tr>
+              <tr><td>Clock</td><td>循环扫描访问位，LRU 的近似</td><td>精度与开销折中</td></tr>
+              <tr><td>LFU</td><td>淘汰访问频率最低的页</td><td>对历史敏感，易被污染</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>物理内存以固定大小的<strong>页帧</strong>分配，虚拟空间按同样大小的<strong>页</strong>划分，避免外部碎片；分段按逻辑单元划分，两者可结合。页表项带权限位（读 / 写 / 执行），支撑写时复制（Copy-on-Write）与 W^X 保护；大页减少表项数量与 TLB 未命中。</p>
+        <p>地址翻译路径：TLB 命中直接得物理地址；未命中查询页表得物理地址，仍未映射则触发缺页中断、由磁盘换入页面。</p>
+        <div class="admonition note">
+          <p class="admonition-title">Note · 为什么需要虚拟内存</p>
+          <p>隔离（进程互不干扰）、扩容（用磁盘扩展内存）、共享（映射同一物理页）。</p>
+        </div>
+        <h2>文件与 I/O</h2>
+        <p>一切皆文件：普通文件、目录、设备、套接字都通过统一的文件描述符（fd）接口访问，内核用 VFS 层屏蔽不同文件系统的差异。元数据存放在 <strong>inode</strong>：权限、大小、时间戳与数据块指针都在其中，文件名只是目录项里指向 inode 的"标签"——硬链接只增加引用计数，不复制数据。</p>
+        <p>I/O 演进路径：</p>
+        <div class="flow"><span class="flow-node">阻塞 I/O</span><span class="flow-arrow">→</span><span class="flow-node">非阻塞 I/O</span><span class="flow-arrow">→</span><span class="flow-node">I/O 多路复用</span><span class="flow-arrow">→</span><span class="flow-node">异步 I/O</span></div>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>模型</th><th>特点</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>阻塞 I/O</td><td>一个线程处理一个连接，编程简单但线程开销大</td></tr>
+              <tr><td>I/O 多路复用</td><td><code>select</code> / <code>poll</code> / <code>epoll</code>，单线程监听大量 fd</td></tr>
+              <tr><td>异步 I/O</td><td>内核完成读写后再通知应用，如 Linux 的 <code>io_uring</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>select</code> 用固定大小的位图、每次全量传入并遍历；<code>poll</code> 改用链表但仍要遍历；<code>epoll</code> 用红黑树管理 fd、就绪事件由内核回调加入就绪链表，只返回就绪的 fd，连接数大了差距明显。<strong>零拷贝</strong>（<code>sendfile</code>、<code>mmap</code>）减少"磁盘 → 内核缓冲 → 用户缓冲 → 套接字"之间的数据搬运，大幅提升大文件传输性能。</p>
+        <h2>实践要点</h2>
+        <ol>
+          <li>排查 CPU 问题先分清内核态与用户态时间占比（<code>top</code> 中的 <code>sy</code> / <code>us</code>），<code>sy</code> 高说明系统调用频繁；</li>
+          <li>多线程共享数据必须加锁，锁的粒度与加锁顺序要有全局约定，从源头避免死锁；</li>
+          <li>高并发网络服务优先选择 <code>epoll</code> 类事件驱动模型，而非"每连接一个线程"；</li>
+          <li>文件与网络读写尽量批量缓冲、必要时用零拷贝，减少系统调用与上下文切换次数；</li>
+          <li>内存与句柄泄漏的根源都在"资源生命周期"：谁分配谁释放，配额与监控要提前设置。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

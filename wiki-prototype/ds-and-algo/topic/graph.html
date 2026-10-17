@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>图论 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="ds-and-algo" data-page="ds-and-algo/topic/graph" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>图论</h1>
+        <p>图 <var>G</var> = (<var>V</var>, <var>E</var>) 由顶点与边构成，是刻画"关系与连接"的数学结构：地图导航、任务依赖、社交网络、电路布线，本质都是图上的算法问题。本页梳理最常用的图算法族——存储、遍历、最短路、拓扑排序、二分图判定与最小生成树。</p>
+
+        <h2>存储方式</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>方式</th><th>空间</th><th>适用场景</th></tr></thead>
+            <tbody>
+              <tr><td>邻接矩阵</td><td><var>O</var>(<var>V</var><sup>2</sup>)</td><td>稠密图、Floyd</td></tr>
+              <tr><td>邻接表</td><td><var>O</var>(<var>V</var> + <var>E</var>)</td><td>绝大多数场景（默认选择）</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre><code class="language-cpp">vector&lt;pair&lt;int, int&gt;&gt; g[N];  // g[u] 保存 (邻接点, 边权)
+
+void addEdge(int u, int v, int w) {
+    g[u].push_back({v, w});
+    g[v].push_back({u, w});   // 无向图必须补反向边
+}</code></pre>
+
+        <p>邻接矩阵用 <code>d[i][j]</code> 直接存边权，无边记 INF：任意边 <var>O</var>(1) 可查，但对稀疏图浪费空间。</p>
+
+        <h2>图的遍历</h2>
+
+        <ul>
+          <li><strong>DFS（递归 / 栈）</strong>→ 连通性、拓扑；</li>
+          <li><strong>BFS（队列）</strong>→ 无权最短路。</li>
+        </ul>
+
+        <pre><code class="language-cpp">// BFS：从 s 出发，第一次到达某点的层数即最短跳数
+queue&lt;int&gt; q;
+q.push(s); vis[s] = true; dist[s] = 0;
+while (!q.empty()) {
+    int u = q.front(); q.pop();
+    for (auto [v, w] : g[u])    // 无权图只用到邻接点 v
+        if (!vis[v]) {
+            vis[v] = true;          // 入队时立即标记，避免重复入队
+            dist[v] = dist[u] + 1;  // 无权图：层数即距离
+            q.push(v);
+        }
+}</code></pre>
+
+        <pre><code class="language-cpp">// DFS：递归写法；统计连通块时对每个未访问点各发起一次
+void dfs(int u) {
+    vis[u] = true;
+    for (auto [v, w] : g[u])
+        if (!vis[v]) dfs(v);
+}</code></pre>
+
+        <p>DFS 写法简洁，但递归深度达 10<sup>5</sup> 级别会爆栈，可改显式栈（见 <a href="../../ds-and-algo/templates.html">代码模板</a>）。发起 DFS 的次数即连通块数；常见用途还有判环、割点与桥。</p>
+
+        <h2>最短路算法对比</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>算法</th><th>适用</th><th>复杂度</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td>BFS</td><td>无权图</td><td><var>O</var>(<var>V</var> + <var>E</var>)</td><td>层数即距离</td></tr>
+              <tr><td>Dijkstra</td><td>非负权</td><td><var>O</var>(<var>E</var> log <var>V</var>)</td><td>堆优化版最常用</td></tr>
+              <tr><td>Bellman-Ford</td><td>可负权</td><td><var>O</var>(<var>VE</var>)</td><td>可检测负环</td></tr>
+              <tr><td>Floyd</td><td>多源</td><td><var>O</var>(<var>V</var><sup>3</sup>)</td><td>三重循环，代码最短</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Dijkstra 的堆优化实现见 <a href="../../ds-and-algo/templates.html#dijkstra">代码模板</a>。Bellman-Ford 的队列优化版即 SPFA，平均表现好但最坏仍是 <var>O</var>(<var>VE</var>)，可被构造数据卡掉；给每个点记入队次数，超过 <var>n</var> 即说明存在<strong>负环</strong>。Floyd 的核心语义是"只允许前 k 个点作中转"，所以 k 必须放最外层：</p>
+
+        <pre><code class="language-cpp">// d 初始为邻接矩阵：d[i][i] = 0，无边为 INF
+for (int k = 0; k &lt; n; k++)      // k 在最外层，逐步放开中转点
+    for (int i = 0; i &lt; n; i++)
+        for (int j = 0; j &lt; n; j++)
+            d[i][j] = min(d[i][j], d[i][k] + d[k][j]);</code></pre>
+
+        <h2>拓扑排序</h2>
+
+        <p>用于 DAG 上的顺序问题（任务调度、依赖编译）：排出的线性序满足所有边"从前指向后"。</p>
+
+        <pre><code class="language-cpp">// Kahn 算法：不断移除入度为 0 的点
+queue&lt;int&gt; q;
+for (int i = 0; i &lt; n; i++)
+    if (!indeg[i]) q.push(i);   // 所有入度为 0 的点先入队
+while (!q.empty()) {
+    int u = q.front(); q.pop();
+    order.push_back(u);
+    for (int v : g[u])
+        if (--indeg[v] == 0) q.push(v);  // 删边，产生新的零入度点
+}</code></pre>
+
+        <p>若排序后 <code>order.size() &lt; n</code>，说明图中<strong>存在环</strong>。拓扑序还是 DAG 上 DP 的合法计算顺序，按序转移 <code>dist[v] = max(dist[v], dist[u] + w)</code> 即可保证处理 v 时所有前驱已算完（如 DAG 最长路）。</p>
+
+        <h2>二分图判定</h2>
+
+        <p>二分图指顶点可分成两组、所有边都跨组的图。判定方法：<strong>染色</strong>——相邻点染不同色，图是二分图 ⇔ 不含奇数长度的环。匈牙利算法求最大匹配的前提就是二分图；工程中的用户—标签、任务—机器分配问题都可建模为二分图匹配。</p>
+
+        <pre><code class="language-cpp">// BFS 染色：color 取 0（未染）/ 1 / -1
+vector&lt;int&gt; color(n, 0);
+for (int s = 0; s &lt; n; s++) {
+    if (color[s]) continue;        // 每个连通块各染一遍
+    queue&lt;int&gt; q; q.push(s); color[s] = 1;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (auto [v, w] : g[u])
+            if (!color[v]) { color[v] = -color[u]; q.push(v); }  // 染反色
+            else if (color[v] == color[u]) { /* 同色 → 非二分图 */ }
+    }
+}</code></pre>
+
+        <h2>最小生成树</h2>
+
+        <ul>
+          <li><strong>Kruskal</strong>：边排序 + 并查集，<var>O</var>(<var>E</var> log <var>E</var>)，稀疏图友好，代码短（并查集实现见 <a href="../../ds-and-algo/templates.html#并查集">代码模板</a>）；</li>
+          <li><strong>Prim</strong>：类似 Dijkstra 的点扩张，稠密图更快（邻接矩阵版 <var>O</var>(<var>V</var><sup>2</sup>)）。</li>
+        </ul>
+
+        <pre><code class="language-cpp">// Kruskal：边按权从小到大尝试，用并查集跳过会成环的边
+sort(edges, edges + m);                // 按 (w, u, v) 排序
+int cnt = 0, total = 0;
+for (auto&amp; [w, u, v] : edges) {
+    if (find(u) == find(v)) continue;  // 两端已连通，选它必成环
+    unite(u, v);
+    total += w;
+    if (++cnt == n - 1) break;         // n 个点的生成树恰有 n-1 条边
+}</code></pre>
+
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <p>单源非负权 → Dijkstra；有负权 → SPFA / Bellman-Ford；多源小图 → Floyd；判环 → 拓扑或并查集。</p>
+        </div>
+
+        <h2>小结</h2>
+
+        <ul>
+          <li>存储默认邻接表，无向图记得补反向边；</li>
+          <li>BFS 求无权最短路，入队即标记；Dijkstra 遇到负权立即失效；</li>
+          <li>拓扑排序一鱼两吃：定顺序 + 判环；DAG 上的 DP 按拓扑序转移；</li>
+          <li>二分图判定用染色，二分图 ⇔ 无奇环；</li>
+          <li>Kruskal 的本质是"贪心选边 + 并查集防环"，选满 n-1 条边即停。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

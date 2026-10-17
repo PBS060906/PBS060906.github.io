@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/application/agent" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>Agent</h1>
+        <p>Agent = <strong>以 LLM 为大脑，循环执行“感知 → 规划 → 行动”的自主系统</strong>。</p>
+
+        <h2>基本循环（ReAct）</h2>
+
+        <div class="flow">
+          <span class="flow-node">任务输入</span><span class="flow-arrow">→</span>
+          <span class="flow-node">思考 Reason</span><span class="flow-arrow">→</span>
+          <span class="flow-node">行动 Act（调用工具）</span><span class="flow-arrow">→</span>
+          <span class="flow-node">观察 Observe（工具结果）</span><span class="flow-arrow">→</span>
+          <span class="flow-node">最终回答（任务完成）</span>
+        </div>
+        <p>观察结果回流至“思考”，如此循环，直到任务完成。</p>
+        <p>核心是让模型交替输出<strong>推理轨迹</strong>与<strong>工具调用</strong>，用观察结果修正后续决策。</p>
+
+        <h2>工具调用</h2>
+
+        <pre><code class="language-json">{
+  "name": "get_weather",
+  "description": "查询指定城市实时天气",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "city": {"type": "string", "description": "城市名"}
+    },
+    "required": ["city"]
+  }
+}
+</code></pre>
+
+        <p>工具设计的黄金法则：<strong>名称自解释、描述写清适用与边界、参数少而精</strong>。</p>
+
+        <h2>工具调用的标准协议</h2>
+
+        <p>function calling 是模型与工具之间的标准协议：请求时用 JSON Schema 声明工具集，模型返回结构化的 <code>name</code> + <code>arguments</code>，而不是自由文本——这是 Agent 可靠执行的基石。</p>
+
+        <pre><code class="language-python">import json
+from openai import OpenAI
+
+client = OpenAI()
+
+# 1) 请求：用 JSON Schema 声明工具集
+resp = client.chat.completions.create(
+    model="qwen-plus",
+    messages=[{"role": "user", "content": "上海今天适合跑步吗？"}],
+    tools=[{
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "查询指定城市实时天气",
+            "parameters": {
+                "type": "object",
+                "properties": {"city": {"type": "string", "description": "城市名"}},
+                "required": ["city"],
+            },
+        },
+    }],
+)
+
+# 2) 响应：模型返回结构化调用，而非自然语言
+tool_call = resp.choices[0].message.tool_calls[0]
+print(tool_call.function.name)       # "get_weather"
+print(tool_call.function.arguments)  # '{"city": "上海"}'
+
+# 3) 执行工具，把结果以 role="tool" 拼回对话，模型据此作答
+result = get_weather(**json.loads(tool_call.function.arguments))
+messages.append(resp.choices[0].message)  # 保留模型的调用决策
+messages.append({
+    "role": "tool",
+    "tool_call_id": tool_call.id,
+    "content": json.dumps(result, ensure_ascii=False),
+})
+</code></pre>
+
+        <h2>最小 Agent 循环</h2>
+
+        <p>把「决策 → 解析 → 执行 → 观察」装进一个 while 循环，就是最小的可用 Agent（60 行内）：</p>
+
+        <pre><code class="language-python">import json
+from openai import OpenAI
+
+client = OpenAI()
+MODEL = "qwen-plus"
+
+def get_weather(city: str) -> str:
+    # 示例工具：真实场景替换为 API 调用
+    return json.dumps({"city": city, "temp": "22℃", "weather": "多云"},
+                      ensure_ascii=False)
+
+TOOLS = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "查询指定城市实时天气",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string", "description": "城市名"}},
+            "required": ["city"],
+        },
+    },
+}]
+EXECUTORS = {"get_weather": get_weather}  # 工具名 → 可执行函数
+
+def run_agent(question: str, max_steps: int = 8) -> str:
+    messages = [
+        {"role": "system", "content": "你是助手，需要时调用工具，完成后给出最终回答。"},
+        {"role": "user", "content": question},
+    ]
+    for _ in range(max_steps):            # 步数上限，防止死循环与失控成本
+        resp = client.chat.completions.create(
+            model=MODEL, messages=messages, tools=TOOLS)
+        msg = resp.choices[0].message
+        if not msg.tool_calls:            # 模型不再调用工具：任务完成
+            return msg.content
+        messages.append(msg)              # LLM 决策写入上下文
+        for call in msg.tool_calls:       # 解析并执行每个 tool_call
+            args = json.loads(call.function.arguments)
+            result = EXECUTORS[call.function.name](**args)
+            messages.append({             # 观察结果拼回 messages
+                "role": "tool",
+                "tool_call_id": call.id,
+                "content": str(result),
+            })
+    return "达到步数上限，任务未完成。"
+
+print(run_agent("上海和北京今天哪里更适合跑步？"))
+</code></pre>
+
+        <h2>RAG 与 Agent 的关系</h2>
+
+        <p>RAG 是<strong>检索增强的单轮问答</strong>：固定流程先检索、后作答，检索由代码触发；Agent 则把检索降级为工具之一，由 LLM 自主决定<strong>何时检索、检索什么、检索后做什么</strong>。</p>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>维度</th><th>RAG</th><th>Agent</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>决策者</td><td>代码写死的固定流程</td><td>LLM 自主规划</td></tr>
+              <tr><td>检索时机</td><td>每轮必检索一次</td><td>按需，可多次、可跳过</td></tr>
+              <tr><td>检索后动作</td><td>拼接上下文直接作答</td><td>可改写查询、再检索、调用其他工具</td></tr>
+              <tr><td>适用场景</td><td>知识库问答等单轮任务</td><td>多步推理、开放性任务</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>实践上二者常组合为「Agent + RAG」：把检索器注册成一个工具，让模型自己判断是否需要查知识库。</p>
+
+        <h2>规划模式</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>模式</th><th>工作方式</th><th>适用场景</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>ReAct</td><td>想一步做一步，观察结果决定下一步</td><td>探索型任务，每步依赖上一步的真实反馈</td></tr>
+              <tr><td>Plan-and-Execute</td><td>先产出完整计划，再逐步执行（可中途重规划）</td><td>步骤可预知、结构稳定的任务，总成本更低</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>经验法则：环境反馈多、路径不明就 ReAct；任务结构清晰就先规划再执行。</p>
+
+        <h2>记忆机制</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>类型</th><th>生命周期</th><th>实现</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>短期记忆</td><td>单次会话</td><td>上下文窗口、消息历史</td></tr>
+              <tr><td>长期记忆</td><td>跨会话</td><td>向量库检索、结构化档案</td></tr>
+              <tr><td>工作记忆</td><td>当前任务</td><td>任务状态、TODO 列表</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>上下文工程</h2>
+
+        <p>Agent 稳定性的关键是<strong>把正确的信息、在正确的时机、以正确的格式</strong>放进上下文：</p>
+        <ul>
+          <li>系统提示：角色 + 工具使用规范 + 停止条件；</li>
+          <li>历史压缩：长对话滚动摘要，保留关键事实；</li>
+          <li>错误注入防护：工具报错时回传可恢复的提示而非裸堆栈。</li>
+        </ul>
+
+        <h2>Agent 评测</h2>
+
+        <ul>
+          <li><strong>任务成功率</strong>：端到端完成率，核心指标；</li>
+          <li><strong>步数与成本</strong>：平均工具调用次数、token 消耗，衡量效率；</li>
+          <li><strong>工具调用准确率</strong>：选对工具、传对参数的比例，用于区分失败是"选错工具"还是"用错参数"。</li>
+        </ul>
+        <p>评测方法：先构造可复现的评测集（任务 + 判定标准），固定随机性与模型版本，跑通基线后再做架构变更，用同一评测集对比。</p>
+
+        <div class="admonition warning">
+          <p class="admonition-title">Warning</p>
+          <p>没有评测就不要上多智能体：连单 Agent 的成功率与成本都没有基线，任何"升级"都无法证明有效。</p>
+        </div>
+
+        <h2>安全与权限</h2>
+
+        <ul>
+          <li><strong>最小权限</strong>：Agent 只拿到完成任务所必需的工具与数据权限；</li>
+          <li><strong>工具白名单</strong>：生产环境禁用任意代码执行、任意文件读写等开放性工具；</li>
+          <li><strong>人工确认</strong>：删除数据、支付、外发邮件等高危操作必须人审后执行；</li>
+          <li><strong>沙箱隔离</strong>：文件与网络访问限制在指定目录与域名内，限制循环步数与预算。</li>
+        </ul>
+
+        <h2>多智能体协作</h2>
+
+        <ul>
+          <li><strong>编排者-执行者</strong>：主 Agent 拆解任务分发给子 Agent，汇总结果；</li>
+          <li><strong>流水线</strong>：按职能串行传递（写代码 → 审代码 → 测试）。</li>
+        </ul>
+
+        <div class="admonition warning">
+          <p class="admonition-title">Warning</p>
+          <p>单 Agent + 好工具能解决 90% 的问题。多智能体引入的通信开销与失控风险，只有在任务可清晰拆分且并行收益大时才值得。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

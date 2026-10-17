@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>运维专栏简介 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/operation/index" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>运维专栏简介</h1>
+        <p>运维的目标：让服务<strong>稳定、可观测、可恢复</strong>。线上故障不是“会不会发生”，而是“何时发生”——运维体系的价值在于把故障影响面与恢复时间压到可控。</p>
+
+        <h2>内容导航</h2>
+
+        <div class="grid cards">
+          <ul>
+            <li>
+              <span class="card-icon"><svg viewBox="0 0 24 24"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg></span>
+              <p><strong>Git</strong></p>
+              <hr>
+              <p>版本控制核心概念与常用命令：三层区域、分支策略、reset / revert / reflog 后悔药、stash 与冲突解决。</p>
+              <p class="card-link"><a href="git.html">开始阅读<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></p>
+            </li>
+            <li>
+              <span class="card-icon"><svg viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span>
+              <p><strong>Docker</strong></p>
+              <hr>
+              <p>容器化交付的标准方案：镜像分层、Dockerfile、多阶段构建、数据卷、网络与 Compose 编排。</p>
+              <p class="card-link"><a href="docker.html">开始阅读<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></p>
+            </li>
+          </ul>
+        </div>
+
+        <h2>服务稳定性三板斧</h2>
+        <ol>
+          <li><strong>监控</strong>：指标（CPU/QPS/延迟）+ 日志 + 链路追踪；</li>
+          <li><strong>冗余</strong>：多实例部署，单点故障自动摘除；</li>
+          <li><strong>演练</strong>：备份恢复、扩容流程平时就要跑通。</li>
+        </ol>
+        <p>三板斧形成的闭环：</p>
+        <ul>
+          <li>监控告警 → 发现问题
+            <ul>
+              <li>自动 → 摘除 / 切流 → 恢复验证；</li>
+              <li>人工 → 日志与链路定位 → 恢复验证。</li>
+            </ul>
+          </li>
+          <li>恢复验证 → 回到监控告警，持续循环。</li>
+        </ul>
+        <div class="admonition abstract">
+          <p class="admonition-title">Abstract · 一条经验</p>
+          <p>能自动化恢复的绝不靠人肉响应。每次线上故障之后，都应沉淀为一条监控指标、一个预案或一段自动化脚本，同一个坑不踩第二次。</p>
+        </div>
+
+        <h2>延伸阅读</h2>
+        <ul>
+          <li><a href="../backend/index.html">后端专栏</a> —— 了解被运维对象本身的架构；</li>
+          <li><a href="../../contributing/index.html">参与贡献</a> —— 欢迎补充运维实践与踩坑记录。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

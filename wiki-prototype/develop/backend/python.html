@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Python 后端实践 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/backend/python" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>Python 后端实践</h1>
+        <p>Python 凭借 FastAPI 与异步生态成为后端快速开发利器。本文沿“选型 → 编码 → 依赖管理 → 部署”的主线，给出一条可复制的工程路线。</p>
+
+        <h2>Web 框架选型</h2>
+        <p>三大主流框架定位不同，没有绝对优劣，按团队与场景选择：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>框架</th><th>定位</th><th>核心特点</th><th>适用场景</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Django</td><td>全家桶</td><td>自带 ORM / Admin / Auth，约定大于配置</td><td>内容型站点、后台管理</td></tr>
+              <tr><td>Flask</td><td>微框架</td><td>核心极简，插件自由组合</td><td>中小项目、快速原型</td></tr>
+              <tr><td>FastAPI</td><td>现代 API 框架</td><td>类型注解驱动、自动生成 OpenAPI 文档、原生 async</td><td>API 服务、高并发 I/O</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <p>要“开箱即用”选 Django；要灵活轻量选 Flask；主打 API、重视类型检查与文档自动化选 FastAPI。三者可在同一组织共存，不必强行统一。</p>
+        </div>
+
+        <h2>WSGI 与 ASGI</h2>
+        <p>Python Web 应用与服务器之间有两代网关协议：<strong>WSGI</strong>（PEP 3333）是同步协议，一个请求占用一个工作线程直到响应完成，代表服务器 Gunicorn、uWSGI；<strong>ASGI</strong> 是异步协议，支持 <code>async/await</code>、WebSocket、SSE 等长连接场景，代表服务器 Uvicorn、Hypercorn。</p>
+        <div class="flow">
+          <span class="flow-node">nginx 反向代理</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Uvicorn / Gunicorn</span><span class="flow-arrow">→</span>
+          <span class="flow-node">ASGI / WSGI 应用</span><span class="flow-arrow">→</span>
+          <span class="flow-node">数据库 / 缓存</span>
+        </div>
+        <p>判断标准：用到 <code>async def</code> 视图、WebSocket、SSE 就走 ASGI；纯同步的老代码，WSGI 依然稳健。FastAPI 只能运行在 ASGI 服务器上。</p>
+
+        <h2>最小 Web 服务</h2>
+        <pre><code class="language-python">from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):  # 类型注解同时承担参数校验与文档生成
+    return {"item_id": item_id}</code></pre>
+        <p>一行命令启动：<code>uvicorn main:app --reload</code>，自动生成交互式文档 <code>/docs</code>（OpenAPI Schema 位于 <code>/openapi.json</code>）。路径参数声明为 <code>int</code> 后，传入非整数会直接返回 422 校验错误。</p>
+
+        <h2>虚拟环境与依赖管理</h2>
+        <p><strong>每个项目一个独立虚拟环境</strong>是铁律，避免全局污染与版本冲突：</p>
+        <pre><code class="language-bash">python -m venv .venv               # 创建虚拟环境
+source .venv/bin/activate          # Linux / macOS 激活
+.venv\Scripts\Activate.ps1         # Windows（PowerShell）激活
+pip install fastapi uvicorn        # 安装依赖
+pip freeze &gt; requirements.txt      # 导出依赖清单</code></pre>
+        <p>小项目用 <code>requirements.txt</code> 锁定版本即可；追求可复现的团队建议迁移到 <code>pyproject.toml</code>，配合 Poetry 或 uv：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>工具</th><th>特点</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>pip + venv</td><td>标准库自带，最通用</td></tr>
+              <tr><td>Poetry</td><td>依赖解析 + 锁文件 + 打包发布一体化</td></tr>
+              <tr><td>uv</td><td>Rust 实现，安装与解析极快，兼容 pip 工作流</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning</p>
+          <p><code>pip freeze</code> 导出的是全量传递依赖，适合“锁定”不适合“声明”。手工维护 <code>requirements.in</code> 再编译出锁定文件，或直接用带锁文件的工具更可控。</p>
+        </div>
+
+        <h2>并发模型选型</h2>
+        <p>先记住 GIL（全局解释器锁）这个前提：同一进程内多线程无法并行执行 Python 字节码，但线程在等待 I/O 时会释放锁。</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>场景</th><th>方案</th><th>关键库</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>CPU 密集</td><td>多进程</td><td><code>multiprocessing</code></td></tr>
+              <tr><td>I/O 密集（同步生态）</td><td>线程池</td><td><code>concurrent.futures</code></td></tr>
+              <tr><td>I/O 密集（异步生态）</td><td>事件循环</td><td><code>asyncio</code> + <code>httpx</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>经验法则：CPU 密集（图像处理、数值计算）用多进程绕开 GIL，或下沉到已释放 GIL 的 C 扩展（如 NumPy）；同步框架下的大量 I/O 用线程池最省心；异步框架下必须全链路使用异步库，混入同步阻塞调用会卡死整个事件循环。</p>
+
+        <h2>异步编程要点</h2>
+        <p>异步不是银弹，写错反而更慢，四条底线：</p>
+        <ol>
+          <li><strong>不在协程里调用同步阻塞函数</strong>：<code>time.sleep</code>、同步 <code>requests</code> 会阻塞事件循环，改用 <code>asyncio.sleep</code>、<code>httpx</code>；</li>
+          <li><strong>CPU 密集任务交给执行器</strong>：<code>asyncio.to_thread</code> 或 <code>loop.run_in_executor</code> 过渡到线程 / 进程池；</li>
+          <li><strong>并发设上限</strong>：用 <code>asyncio.Semaphore</code> 限流，防止瞬间打满下游；</li>
+          <li><strong>必须设超时</strong>：<code>asyncio.wait_for(coro(), timeout=3)</code>，避免协程无限悬挂。</li>
+        </ol>
+        <pre><code class="language-python">sem = asyncio.Semaphore(10)  # 最大并发 10
+
+async def limited_fetch(client, url):
+    async with sem:  # 超出上限的协程在此排队
+        return await client.get(url)</code></pre>
+
+        <h2>常见部署方式</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>方式</th><th>要点</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>裸机 + systemd</td><td><code>gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000</code>，systemd 托管实现开机自启与崩溃拉起，前面挂 nginx 处理静态资源与 TLS 终结</td></tr>
+              <tr><td>Docker 容器</td><td>镜像内只跑 Uvicorn，副本数与端口编排交给 Compose / Kubernetes，环境一致性最好，参见 <a href="../operation/docker.html">Docker 页</a></td></tr>
+              <tr><td>Serverless 托管</td><td>可直接部署到云函数或托管平台，注意冷启动耗时与无状态约束（会话外置到 Redis）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <p>生产配置：关闭 <code>--reload</code>；worker 数参考 <code>2 × CPU 核数 + 1</code>；日志落 stdout 交给容器或 systemd 收集。</p>
+        </div>
+
+        <h2>工程化清单</h2>
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <ul>
+            <li>配置与密钥走环境变量，绝不硬编码；</li>
+            <li>日志结构化（<code>structlog</code> / <code>logging</code>），带请求 ID 便于追踪；</li>
+            <li>数据库连接池 + 迁移脚本（<code>alembic</code>）；</li>
+            <li>健康检查接口 <code>/healthz</code>；</li>
+            <li>类型注解 + <code>mypy</code> 静态检查。</li>
+          </ul>
+        </div>
+        <p>在此清单之上，按项目规模补充：接口限流与熔断、灰度发布脚本、性能基线压测报告。</p>
+
+        <h2>实践要点</h2>
+        <ol>
+          <li>框架选型看场景不看流行度：Django 管后台、FastAPI 做 API 是常见组合；</li>
+          <li>全链路异步才能发挥事件循环的威力，一处同步阻塞就让并发优势归零；</li>
+          <li>依赖必须锁定版本，构建可复现是部署自动化的前提；</li>
+          <li>worker 数量、连接池大小、并发上限都要靠压测确定，不要拍脑袋；</li>
+          <li>上线前过一遍工程化清单，健康检查与结构化日志是可观测性的底线。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

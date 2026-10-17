@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>后端专栏简介 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/backend/index" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>后端专栏简介</h1>
+        <p>后端负责<strong>数据、业务与稳定性</strong>。无论语言如何变化，核心命题不变：</p>
+        <ul>
+          <li>如何组织业务逻辑（分层架构）；</li>
+          <li>如何存储与检索数据（数据库）；</li>
+          <li>如何应对流量（缓存、异步、水平扩展）。</li>
+        </ul>
+        <p>本专栏聚焦“能落地的工程实践”：框架为什么这么选、代码怎么组织、上线前要检查什么，而非罗列 API 手册。</p>
+
+        <h2>内容导航</h2>
+        <ul>
+          <li><a href="python.html">Python</a> —— FastAPI / WSGI 与 ASGI / 并发编程 / 常见部署方式</li>
+        </ul>
+        <p>规划中的主题：数据库设计与索引优化、缓存与消息队列、网关与限流。</p>
+
+        <h2>分层架构</h2>
+        <p>绝大多数后端服务可以抽象为三层，职责从外到内依次收敛：</p>
+        <div class="flow">
+          <span class="flow-node">Controller 接口层</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Service 业务层</span><span class="flow-arrow">→</span>
+          <span class="flow-node">DAO 数据层</span><span class="flow-arrow">→</span>
+          <span class="flow-node">数据库</span>
+        </div>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>层</th><th>职责</th><th>禁忌</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>接口层</td><td>协议适配、参数校验、鉴权</td><td>不写业务逻辑</td></tr>
+              <tr><td>业务层</td><td>编排领域逻辑、界定事务边界</td><td>不直接拼 SQL</td></tr>
+              <tr><td>数据层</td><td>封装 ORM / SQL 访问</td><td>不感知业务规则</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition abstract">
+          <p class="admonition-title">Abstract · 设计原则</p>
+          <p>接口薄、业务厚、数据纯。跨层依赖只允许自上而下，公共逻辑沉淀到独立模块。</p>
+        </div>
+
+        <h2>延伸阅读</h2>
+        <ul>
+          <li><a href="../operation/git.html">Git 版本控制</a> —— 多人协作的基础设施；</li>
+          <li><a href="../operation/docker.html">Docker 容器化</a> —— 后端交付的标准形态；</li>
+          <li><a href="../../contributing/index.html">参与贡献</a> —— 发现错误或有更好的实践，欢迎反馈。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>计算机网络 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/cs/computer-network" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>计算机网络</h1>
+        <p>本页按 TCP/IP 分层模型自底向上梳理计算机网络的核心知识。网络是分布式系统的地基：无论是排查线上故障，还是设计高并发服务，都建立在对分层的理解之上。</p>
+        <h2>分层模型</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>层次</th><th>核心问题</th><th>关键协议/设备</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>应用层</td><td>数据如何表示与交互</td><td>HTTP、DNS、SMTP</td></tr>
+              <tr><td>传输层</td><td>进程间可靠通信</td><td>TCP、UDP</td></tr>
+              <tr><td>网络层</td><td>主机间路由转发</td><td>IP、ICMP、路由器</td></tr>
+              <tr><td>数据链路层</td><td>相邻节点帧传输</td><td>以太网、交换机、ARP</td></tr>
+              <tr><td>物理层</td><td>比特流传输</td><td>网线、光纤、集线器</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>OSI 七层模型把会话层、表示层从应用层中拆出，教学中常用；工程实践以 TCP/IP 分层为准。发送方数据自上而下逐层<strong>封装</strong>（每层加上自己的头部），接收方自下而上逐层<strong>解封装</strong>；同层协议在逻辑上直接对话，实际数据都要经过下方各层转发。</p>
+        <h2>网络层：IP 与路由</h2>
+        <p>IPv4 地址 32 位，CIDR 记法如 <code>192.168.1.0/24</code> 表示前 24 位是网络号；<strong>NAT</strong> 让多台内网机器共享一个公网 IP 出网，是 IPv4 地址紧张的主流缓解手段。路由器按<strong>最长前缀匹配</strong>查路由表转发数据包；<code>ICMP</code> 承载差错与探测报文，<code>ping</code> 与 <code>traceroute</code> 都构建在它之上。IPv6 用 128 位地址从根本上缓解地址不足，与 IPv4 长期共存。</p>
+        <h2>传输层：TCP 与 UDP</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>维度</th><th>TCP</th><th>UDP</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>连接</td><td>面向连接（握手 / 挥手）</td><td>无连接</td></tr>
+              <tr><td>可靠性</td><td>可靠、有序、不丢不重</td><td>尽最大努力交付</td></tr>
+              <tr><td>传输单位</td><td>字节流</td><td>数据报</td></tr>
+              <tr><td>典型场景</td><td>网页、文件传输、数据库</td><td>视频、DNS、游戏</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>TCP 的三个灵魂问题</h2>
+        <h3>可靠传输</h3>
+        <p>序列号 + 确认应答 + 超时重传 + 滑动窗口。确认应答采用累积确认，发送方维护"已发送未确认"的滑动窗口，窗口内字节可连续发出；丢包判定依赖<strong>快速重传</strong>（收到 3 个重复 ACK）与超时定时器。</p>
+        <h3>流量控制</h3>
+        <p>接收方通过 TCP 头部中的窗口字段通告剩余缓冲区大小，防止发送方压垮接收方；发送方未获确认的数据量不能超过该窗口。</p>
+        <h3>拥塞控制</h3>
+        <div class="flow"><span class="flow-node">慢启动</span><span class="flow-arrow">→</span><span class="flow-node">拥塞避免</span><span class="flow-arrow">→</span><span class="flow-node">快速重传/恢复</span></div>
+        <p>流量控制保护"接收方"，拥塞控制保护"网络"：发送方维护拥塞窗口，慢启动阶段指数增长，达到阈值后线性增加；丢包进入快速重传/恢复后回到拥塞避免，超时则回到慢启动。</p>
+        <h3>建立与断开</h3>
+        <p><strong>三次握手</strong>（连接建立）：</p>
+        <div class="flow"><span class="flow-node">客户端 SYN</span><span class="flow-arrow">→</span><span class="flow-node">服务端 SYN+ACK</span><span class="flow-arrow">→</span><span class="flow-node">客户端 ACK</span></div>
+        <p><strong>四次挥手</strong>（连接释放）：</p>
+        <div class="flow"><span class="flow-node">FIN</span><span class="flow-arrow">→</span><span class="flow-node">ACK</span><span class="flow-arrow">→</span><span class="flow-node">FIN</span><span class="flow-arrow">→</span><span class="flow-node">ACK</span></div>
+        <p>TIME_WAIT 让主动关闭方停留约 2 个报文生存期（2MSL），确保最后一个 ACK 可达、旧报文自然消亡——这也是高并发短连接下出现大量 TIME_WAIT 的原因。</p>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · 高频面试点</p>
+          <p>为什么握手三次而挥手四次？（半关闭状态）；TCP 粘包怎么解决？（定长 / 分隔符 / 长度前缀）；HTTP 1.1 / 2 / 3 的区别？（队头阻塞 → 多路复用 → QUIC）</p>
+        </div>
+        <h2>应用层：DNS 与 HTTP</h2>
+        <h3>DNS：域名如何变成 IP</h3>
+        <p>解析自上而下逐级查询：浏览器缓存 → 系统缓存 → 本地域名服务器（递归查询）→ 根域名服务器 → 顶级域服务器 → 权威服务器（迭代查询），最终拿到 IP 并缓存。常见记录类型：A（IPv4）、AAAA（IPv6）、CNAME（别名）、MX（邮件）；常规查询走 UDP 53，区域传送与大报文回退到 TCP 53。</p>
+        <h3>HTTP 报文与状态码</h3>
+        <p>请求报文由"请求行 + 头部 + 空行 + 主体"组成：</p>
+        <pre><code class="language-http">GET /index.html HTTP/1.1
+Host: example.com
+User-Agent: wiki-demo
+Accept: text/html</code></pre>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>状态码</th><th>含义</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>200</td><td>成功</td></tr>
+              <tr><td>301 / 302</td><td>永久 / 临时重定向</td></tr>
+              <tr><td>403 / 404</td><td>禁止访问 / 资源不存在</td></tr>
+              <tr><td>500 / 502 / 504</td><td>服务端错误 / 网关错误 / 网关超时</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>HTTP 版本演进</h3>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>版本</th><th>关键改进</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1.1</td><td>长连接、管线化（队头阻塞仍在）</td></tr>
+              <tr><td>2</td><td>二进制分帧、多路复用、头部压缩</td></tr>
+              <tr><td>3</td><td>基于 QUIC（UDP），彻底解决 TCP 层队头阻塞</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>HTTPS 与无状态</h3>
+        <p>HTTPS = HTTP + TLS：握手阶段用<strong>非对称加密</strong>交换密钥并验证证书链，之后用<strong>对称加密</strong>传输数据，兼顾安全与性能。HTTP 是无状态协议，登录态靠 Cookie 携带：服务端发 <code>Set-Cookie</code>，浏览器后续请求自动带上。Session 把状态存服务端，JWT 把状态签名后放客户端；需要服务器主动推送的场景（聊天、行情）用 WebSocket，基于 HTTP 握手后升级为全双工长连接。</p>
+        <h2>一次完整的 HTTP 请求</h2>
+        <ol>
+          <li>DNS 解析域名 → 得到 IP；</li>
+          <li>TCP 三次握手建立连接（SYN → SYN+ACK → ACK）；</li>
+          <li>TLS 握手协商密钥（HTTPS）；</li>
+          <li>发送 HTTP 请求报文，服务端返回响应；</li>
+          <li>四次挥手释放连接。</li>
+        </ol>
+        <h2>常用排查命令</h2>
+        <pre><code class="language-bash">ping example.com             # 连通性与延迟
+traceroute example.com       # 路径追踪
+dig example.com              # DNS 解析详情
+curl -v https://example.com  # 报文级调试
+tcpdump -i any port 443      # 抓包分析
+ss -tlnp                     # 本地端口监听</code></pre>
+        <h2>实践要点</h2>
+        <ol>
+          <li>排查问题自底向上：先 <code>ping</code> 查连通性，再查端口（<code>ss</code> / <code>telnet</code>），最后看应用层报文（<code>curl -v</code>）；</li>
+          <li>服务监听 <code>0.0.0.0</code> 才能被外部访问，<code>127.0.0.1</code> 仅本机可达；对外 API 必上 HTTPS，注意证书有效期与自动续期；</li>
+          <li>高并发短连接场景关注 TIME_WAIT 堆积，用连接池或长连接复用缓解；</li>
+          <li>性能优化先看"距离与次数"：CDN 靠近用户、连接复用减少握手、批量合并请求；</li>
+          <li>出问题先分清网络还是应用：连接数与 socket 状态用 <code>ss</code>，错误率看应用日志，交互时序抓包分析。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

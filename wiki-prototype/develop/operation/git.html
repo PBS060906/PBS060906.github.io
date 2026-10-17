@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/operation/git" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>Git</h1>
+        <p>Git 是分布式版本控制系统。理解其<strong>三层区域</strong>（工作区 → 暂存区 → 版本库）后，一切命令都能推出来。</p>
+
+        <h2>核心概念</h2>
+
+        <div class="flow">
+          <span class="flow-node">工作区</span>
+          <span class="flow-arrow">git add →</span>
+          <span class="flow-node">暂存区</span>
+          <span class="flow-arrow">git commit →</span>
+          <span class="flow-node">版本库</span>
+          <span class="flow-arrow">git push →</span>
+          <span class="flow-node">远程仓库</span>
+        </div>
+
+        <h2>日常命令速查</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>场景</th><th>命令</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>克隆仓库</td><td><code>git clone &lt;url&gt;</code></td></tr>
+              <tr><td>查看状态</td><td><code>git status</code> / <code>git diff</code></td></tr>
+              <tr><td>暂存与提交</td><td><code>git add -p</code> → <code>git commit -m "msg"</code></td></tr>
+              <tr><td>拉取更新</td><td><code>git pull --rebase</code></td></tr>
+              <tr><td>推送</td><td><code>git push origin main</code></td></tr>
+              <tr><td>撤销工作区修改</td><td><code>git restore &lt;file&gt;</code></td></tr>
+              <tr><td>回退提交</td><td><code>git reset --soft HEAD~1</code></td></tr>
+              <tr><td>查看历史</td><td><code>git log --oneline --graph</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>分支操作</h2>
+
+        <pre><code class="language-bash">git switch -c feature/demo   # 创建并切换
+git merge feature/demo       # 合并（保留分叉历史）
+git rebase main              # 变基（线性历史）
+git branch -d feature/demo   # 删除分支</code></pre>
+
+        <div class="admonition question">
+          <p class="admonition-title">Question</p>
+          <p>团队约定优先：共享分支用 merge 保平安，个人分支合入主干前 rebase 求整洁。<strong>绝不 rebase 已推送的公共分支</strong>。</p>
+        </div>
+
+        <h2>后悔药速查表</h2>
+
+        <p>改错了别慌，先判断改动走到哪一层，再对症下药：</p>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>场景</th><th>解法</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>改了，没 <code>add</code></td><td><code>git restore &lt;file&gt;</code> 丢弃工作区修改</td></tr>
+              <tr><td><code>add</code> 了，没 <code>commit</code></td><td><code>git restore --staged &lt;file&gt;</code> 移出暂存区，改动仍在工作区</td></tr>
+              <tr><td><code>commit</code> 了，没 <code>push</code></td><td><code>git reset</code> 回退，三种模式见下表</td></tr>
+              <tr><td><code>push</code> 了</td><td><code>git revert &lt;commit&gt;</code> 生成反向提交，不改写历史，公共分支可用</td></tr>
+              <tr><td>彻底找不回</td><td><code>git reflog</code> 兜底，见下文</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>reset 三种模式</h3>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>模式</th><th>工作区</th><th>暂存区</th><th>适用场景</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>--soft</code></td><td>保留</td><td>保留</td><td>只撤销 commit，改动原样保留，可重新提交</td></tr>
+              <tr><td><code>--mixed</code>（默认）</td><td>保留</td><td>清空</td><td>撤销 commit 和 add，重新挑选要暂存的内容</td></tr>
+              <tr><td><code>--hard</code></td><td>清空</td><td>清空</td><td>彻底丢弃，未提交改动一并消失，慎用</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>最后一张底牌是 <code>git reflog</code>：它记录 HEAD 的每一次移动，找到出事前的哈希值后 <code>git reset --hard &lt;hash&gt;</code> 即可回去——只要 commit 过，基本都能救回。只想把某个已有提交“复制”到当前分支，则用 <code>git cherry-pick &lt;hash&gt;</code>。</p>
+
+        <h2>stash 临时存档</h2>
+
+        <p>改动写到一半需要切分支，又不想提交半成品，先存档再走：</p>
+
+        <pre><code class="language-bash">git stash        # 存档全部未提交改动，工作区恢复干净
+git stash list   # 查看存档列表（stash@{0} 为最新）
+git stash pop    # 恢复最近一次存档，并删除该记录</code></pre>
+
+        <h2>远程协作</h2>
+
+        <p><code>git fetch</code> 只下载远程更新、不动本地分支（先看再合）；<code>git pull</code> 相当于 <code>fetch + merge</code>，一步到位。遇到冲突按三步走：</p>
+
+        <div class="flow">
+          <span class="flow-node">git status 定位冲突文件</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">手动修改，删除 &lt;&lt;&lt;&lt;&lt;&lt;&lt; 等标记</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">git add 后 git commit 收尾</span>
+        </div>
+
+        <p>rebase 后需要强推时，用 <code>--force-with-lease</code> 代替 <code>--force</code>：后者无条件覆盖远程历史，若同事在此期间推送了新提交会被直接抹掉；前者多一层校验——仅当远程还停在你本地已知的提交上才允许覆盖，否则拒绝推送，避免误删他人的工作。</p>
+
+        <h2>大文件与 .gitignore</h2>
+
+        <pre><code class="language-bash"># .gitignore 示例
+node_modules/    # 依赖目录，绝不入库
+dist/            # 构建产物
+*.log            # 所有日志文件
+.env             # 密钥与私密配置
+!keep.log        # ! 取反：该文件是例外，需要跟踪</code></pre>
+
+        <p>大文件已经提交过怎么办：先补一条 <code>.gitignore</code> 规则，再执行 <code>git rm --cached &lt;file&gt;</code> 让仓库停止跟踪（本地文件保留）并提交；若要从历史中彻底清除，需要用 <code>git filter-repo</code> 之类工具重写历史。</p>
+
+        <h2>实用别名</h2>
+
+        <p>高频命令配个短别名，少敲很多字：</p>
+
+        <pre><code class="language-bash">git config --global alias.st status          # git st
+git config --global alias.sw switch          # git sw
+git config --global alias.lg "log --oneline --graph"
+git config --global alias.undo "reset --soft HEAD~1"</code></pre>
+
+        <h2>提交信息规范</h2>
+
+        <pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
+
+feat(auth): 支持手机号验证码登录
+fix(api): 修复分页参数越界
+docs: 补充部署说明</code></pre>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

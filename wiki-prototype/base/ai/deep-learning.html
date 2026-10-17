@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>深度学习 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/ai/deep-learning" data-root="../..">
+<main class="md-main"><div class="md-main__inner"><div class="md-content">
+<article class="md-typeset md-content__inner">
+        <h1>深度学习</h1>
+        <p>深度学习的核心闭环：<strong>前向算损失，反向传梯度，优化器更新参数</strong>。本页围绕这个闭环建立最小知识体系，全部概念都可用页末的 PyTorch 示例亲手验证。</p>
+        <h2>从 MLP 说起</h2>
+        <p>一个神经元 = 线性变换 + 非线性激活；神经元排成层、层与层全连接，就是多层感知机（MLP）。每一层做的事：</p>
+        <div class="math-block"><var>a</var><sup>(<var>l</var>)</sup> = σ(<var>W</var><sup>(<var>l</var>)</sup><var>a</var><sup>(<var>l</var>−1)</sup> + <var>b</var><sup>(<var>l</var>)</sup>)</div>
+        <p>理论上，足够宽的单隐层网络已能近似任意连续函数（万能近似定理），但<strong>能近似</strong>不等于<strong>学得动</strong>——深层结构带来的层次化表达与参数效率才是实践中的关键。</p>
+        <h2>前向与反向传播</h2>
+        <p>前向传播把输入逐层变换成预测；反向传播用<strong>链式法则</strong>，把损失对每个参数的梯度从后往前逐层算出。以单层计算图为例：</p>
+        <div class="flow"><span class="flow-node">输入 x</span><span class="flow-arrow">→</span><span class="flow-node">z = Wx + b</span><span class="flow-arrow">→</span><span class="flow-node">a = σ(z)</span><span class="flow-arrow">→</span><span class="flow-node">损失 L(a, y)</span></div>
+        <p>反向时箭头倒过来，每层只需"上游传来的梯度"乘以"本层的局部导数"：</p>
+        <div class="math-block">∂<var>L</var>/∂<var>W</var> = ∂<var>L</var>/∂<var>a</var> · ∂<var>a</var>/∂<var>z</var> · ∂<var>z</var>/∂<var>W</var></div>
+        <p>框架（如 PyTorch 的 autograd）会自动完成这一切——你只需写出前向计算，梯度自动可求。</p>
+        <h2>激活函数对比</h2>
+        <p>没有非线性激活，多层网络会塌缩成一层线性变换。常用激活函数速查：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>激活函数</th><th>公式</th><th>优点</th><th>坑</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Sigmoid</td><td>1 / (1 + e<sup>−z</sup>)</td><td>输出 (0,1)，可解释为概率</td><td>两端饱和 → 梯度消失；输出非零中心</td></tr>
+              <tr><td>Tanh</td><td>(e<sup>z</sup> − e<sup>−z</sup>) / (e<sup>z</sup> + e<sup>−z</sup>)</td><td>零中心，收敛快于 Sigmoid</td><td>仍有饱和区</td></tr>
+              <tr><td>ReLU</td><td>max(0, z)</td><td>计算极快，正区间梯度恒为 1</td><td>死 ReLU：负区间梯度恒 0，神经元"装死"</td></tr>
+              <tr><td>GELU</td><td>z · Φ(z)</td><td>平滑非单调，Transformer 默认</td><td>计算略贵，小模型收益有限</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>损失函数</h2>
+        <ul>
+          <li><strong>MSE</strong>（均方误差）：回归默认，<var>L</var> = (1/<var>n</var>) Σ(<var>ŷ</var><sub><var>i</var></sub> − <var>y</var><sub><var>i</var></sub>)<sup>2</sup>，对离群点敏感；</li>
+          <li><strong>交叉熵</strong>：分类默认，度量预测概率分布与真实标签的距离，梯度干净（<var>p</var> − <var>y</var>），配合 sigmoid / softmax 使用。</li>
+        </ul>
+        <h2>优化器演进</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>优化器</th><th>一行直觉</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>SGD</td><td>沿当前梯度小步走，简单，但方向易震荡</td></tr>
+              <tr><td>Momentum</td><td>累积历史梯度当"惯性"，冲过小坑、抑制震荡</td></tr>
+              <tr><td>Adam</td><td>给每个参数自适应学习率，新任务的默认首选</td></tr>
+              <tr><td>AdamW</td><td>Adam + 解耦的权重衰减，Transformer 时代标配</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>正则化三件套</h2>
+        <ul>
+          <li><strong>Dropout</strong>：训练时随机把一部分激活置零，逼网络不依赖个别神经元；<strong>评估时必须关闭</strong>（<code>model.eval()</code>）；</li>
+          <li><strong>权重衰减</strong>：在损失中加 <var>λ</var>‖<var>w</var>‖<sup>2</sup>，压制参数规模，得到更平滑的函数；</li>
+          <li><strong>BatchNorm</strong>：把每层输入归一化到稳定分布，训练更快更稳，顺带带来轻微正则。</li>
+        </ul>
+        <p>三者机制完全不同（去共适应 / 压参数 / 稳分布），可以组合使用，但不宜盲目堆叠。</p>
+        <h2>训练循环：PyTorch 最小示例</h2>
+        <p>五步口诀：<strong>zero_grad → forward → loss → backward → step</strong>。下面用两层全连接网络拟合带噪声的一维函数，可直接运行：</p>
+        <pre><code class="language-python">import torch
+import torch.nn as nn
+
+# 1. 数据：拟合 sin(x)，输入输出各一维
+torch.manual_seed(0)
+x = torch.linspace(-3, 3, 200).unsqueeze(1)       # 形状 (200, 1)
+y = torch.sin(x) + 0.1 * torch.randn_like(x)      # 叠加高斯噪声
+
+# 2. 模型：两层网络（隐藏层 64 维）
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = nn.Sequential(
+    nn.Linear(1, 64),
+    nn.Tanh(),                                    # 非线性激活
+    nn.Linear(64, 1),
+).to(device)                                      # 模型搬到 GPU（若有）
+
+# 3. 损失与优化器
+loss_fn = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+
+# 4. 训练循环：口诀 zero_grad → forward → loss → backward → step
+for epoch in range(1000):
+    pred = model(x.to(device))                    # 前向传播
+    loss = loss_fn(pred, y.to(device))            # 计算损失
+    optimizer.zero_grad()                         # 清空上一步的梯度
+    loss.backward()                               # 反向传播求梯度
+    optimizer.step()                              # 用梯度更新参数
+    if (epoch + 1) % 200 == 0:
+        print(f"epoch {epoch + 1:4d}, loss {loss.item():.4f}")</code></pre>
+        <h2>GPU 与 device</h2>
+        <p>张量与模型必须位于同一设备才能计算：<code>.to(device)</code> 一行即可在 CPU / GPU 间切换，其余代码不变；忘记把输入数据一起 <code>.to(device)</code> 是最常见报错。</p>
+        <h2>过拟合诊断：看 train / val 曲线</h2>
+        <p>训练时同时记录训练集与验证集损失，两条曲线的相对走势就是诊断书：</p>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>现象</th><th>诊断</th><th>药方</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>train 降、val 升</td><td>过拟合</td><td>Dropout / 权重衰减 / 早停 / 扩充数据</td></tr>
+              <tr><td>两条都高</td><td>欠拟合</td><td>加深加宽 / 换激活 / 训练更久</td></tr>
+              <tr><td>两条都低、val 略高</td><td>健康收敛</td><td>正常，可继续打磨数据与超参</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · 每次实验只动一件事</p>
+          <p>调参时一次只改学习率、网络宽度或正则强度中的一个变量，并固定随机种子，否则曲线差异无法归因。</p>
+        </div>
+        <h2>下一步</h2>
+        <ul>
+          <li>掌握训练闭环后，进入 <a href="../../llm/index.html">大模型专栏</a>；</li>
+          <li>想补齐经典算法，请回顾 <a href="machine-learning.html">机器学习</a>。</li>
+        </ul>
+</article>
+</div></div></main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

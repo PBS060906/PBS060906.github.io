@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>常用标准库 - 斟知</title>
+<link rel="icon" href="../../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/ai/python/stdlib" data-root="../../../">
+<main class="md-main"><div class="md-main__inner"><div class="md-content">
+<article class="md-typeset md-content__inner">
+        <h1>常用标准库</h1>
+        <p>本页按使用频率梳理工程师最常用的标准库模块，每个模块给出<strong>一句话定位 + 最小可运行示例</strong>。原则：写轮子之前，先查标准库。</p>
+        <h2>collections：容器增强</h2>
+        <p>一句话定位：给内置容器装上"外挂"，省掉手写的判断与样板代码。</p>
+        <pre><code class="language-python">from collections import defaultdict, Counter, deque, namedtuple
+
+# defaultdict：带默认值工厂的字典，省去"先判存在再插入"
+groups: defaultdict[str, list] = defaultdict(list)
+for name, city in [("Alice", "BJ"), ("Bob", "SH"), ("Carol", "BJ")]:
+    groups[city].append(name)        # {'BJ': ['Alice', 'Carol'], 'SH': ['Bob']}
+
+# Counter：计数器，most_common 直接给 Top-N
+print(Counter("mississippi").most_common(2))   # [('i', 4), ('s', 4)]
+
+# deque：双端队列，两端增删都是 O(1)，天然适合滑动窗口
+window = deque(maxlen=3)             # 定长滑窗，超出自动淘汰最旧元素
+for x in [1, 2, 3, 4]:
+    window.append(x)                 # 依次为 [1] [1,2] [1,2,3] [2,3,4]
+
+# namedtuple：给元组起字段名，轻量只读记录
+Point = namedtuple("Point", ["x", "y"])
+p = Point(1, 2)
+print(p.x + p.y)                     # 3</code></pre>
+        <h2>itertools：迭代器工具箱</h2>
+        <p>一句话定位：惰性、省内存的组合与切分工具，处理"流"数据的首选。</p>
+        <pre><code class="language-python">from itertools import chain, islice, groupby, product
+
+chain([1, 2], [3, 4])                # 1 2 3 4：惰性拼接多个可迭代对象
+list(islice(range(10), 2, 6))        # [2, 3, 4, 5]：惰性切片，可作用于无限流
+
+# groupby：相邻分组，务必先按同一个 key 排序，否则分组会碎
+data = sorted([("BJ", 1), ("SH", 2), ("BJ", 3)])
+for city, items in groupby(data, key=lambda t: t[0]):
+    print(city, [v for _, v in items])   # BJ [1, 3] / SH [2]
+
+list(product("AB", repeat=2))        # 笛卡尔积：AA AB BA BB</code></pre>
+        <h2>functools：函数式工具</h2>
+        <p>一句话定位：缓存、偏函数与装饰器辅助，让函数更好用、更快、更整洁。</p>
+        <pre><code class="language-python">from functools import lru_cache, partial, wraps, reduce
+
+@lru_cache(maxsize=None)             # 记忆化：相同参数直接返回缓存结果
+def fib(n: int) -&gt; int:
+    return n if n &lt; 2 else fib(n - 1) + fib(n - 2)
+
+print(fib(80))                       # 秒出；不加缓存则指数级爆炸
+
+int2 = partial(int, base=2)          # 固定部分参数，派生新函数
+print(int2("1010"))                  # 10
+
+def log_calls(func):
+    @wraps(func)                     # 保留原函数名与文档，写装饰器必配
+    def wrapper(*args, **kwargs):
+        print(f"调用 {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+print(reduce(lambda a, b: a * b, range(1, 6)))   # 120 = 5!</code></pre>
+        <h2>pathlib：路径即对象</h2>
+        <p>一句话定位：用对象方法替代 <code>os.path</code> 的字符串拼接，读写一行搞定。</p>
+        <pre><code class="language-python">from pathlib import Path
+
+cfg = Path("config") / "app.yaml"    # 用 / 拼路径，跨平台无忧
+print(cfg.exists(), cfg.suffix)      # False .yaml
+
+text = Path("notes.txt").read_text(encoding="utf-8")   # 一行读文件
+
+out = Path("out/demo.txt")
+out.parent.mkdir(parents=True, exist_ok=True)          # 递归建目录
+out.write_text("hello", encoding="utf-8")
+
+print(list(Path(".").glob("*.html")))                  # 通配符找文件</code></pre>
+        <h2>re：正则表达式</h2>
+        <p>一句话定位：文本提取与替换的利器，掌握 search / findall / 分组三件事就够日常八成场景。</p>
+        <pre><code class="language-python">import re
+
+m = re.search(r"(\d{4})-(\d{2})-(\d{2})", "发表于 2026-10-17")
+if m:
+    print(m.group(0))                # 2026-10-17：整个匹配
+    print(m.groups())                # ('2026', '10', '17')：分组提取
+
+print(re.findall(r"\w+@\w+\.\w+", "a@x.com b@y.cn"))  # ['a@x.com', 'b@y.cn']
+print(re.sub(r"\s+", " ", "too   many  spaces"))      # 压缩连续空白</code></pre>
+        <h2>json 与 dataclass：结构化数据</h2>
+        <p>一句话定位：dataclass 定义整洁的数据结构，json 负责与外部世界交换。</p>
+        <pre><code class="language-python">import json
+from dataclasses import dataclass, asdict
+
+@dataclass
+class User:                          # 自动生成 __init__ / __repr__ / __eq__
+    name: str
+    age: int = 0
+
+u = User("Alice", 30)
+s = json.dumps(asdict(u), ensure_ascii=False)   # 结构体 → JSON 字符串
+print(s)                                        # {"name": "Alice", "age": 30}
+back = User(**json.loads(s))                    # JSON → 结构体</code></pre>
+        <h2>logging：日志而非 print</h2>
+        <p>一句话定位：分级、可关闭、可入文件的标准日志体系。<code>print</code> 无级别、无时间戳、无法按模块开关，只能用于临时调试。</p>
+        <pre><code class="language-python">import logging
+
+# 一次基础配置，整个进程生效
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+log = logging.getLogger("app.pay")   # 分层命名：app.pay 继承 app 的配置
+log.info("订单 %s 创建成功", "A001")  # 参数化占位：延迟拼接，省开销
+log.warning("余额不足，已重试 %d 次", 2)
+log.error("支付失败", exc_info=True) # 顺带打印异常堆栈</code></pre>
+        <h2>datetime 与 time：时间处理</h2>
+        <p>一句话定位：时区意识 + timedelta 运算是两大核心，naive 时间是万坑之源。</p>
+        <pre><code class="language-python">from datetime import datetime, timezone, timedelta
+
+# 时区意识：优先使用带时区的 aware 对象
+now = datetime.now(timezone.utc)     # UTC 当前时间
+print(now.astimezone())              # 转换为本地时区
+
+deadline = now + timedelta(days=7)   # timedelta 做时间运算
+print((deadline - now).days)         # 7
+
+ts = datetime.fromtimestamp(0, tz=timezone.utc)   # 1970-01-01 UTC
+# 陷阱：datetime.now() 不带时区（naive），跨系统比较与序列化易出错</code></pre>
+        <h2>subprocess 与 os.environ：外部命令与配置</h2>
+        <p>一句话定位：调用外部命令用列表传参 + check，读配置密钥走环境变量而非硬编码。</p>
+        <pre><code class="language-python">import subprocess, os
+
+# 列表形式传参：不经过 shell 解释，天然免疫空格与注入
+r = subprocess.run(
+    ["git", "log", "--oneline", "-3"],
+    capture_output=True, text=True,  # 输出按字符串返回
+    check=True,                      # 非零退出码直接抛异常
+)
+print(r.stdout)
+
+token = os.environ.get("API_TOKEN")  # 缺失返回 None，绝不硬编码密钥
+if not token:
+    raise SystemExit("请先设置 API_TOKEN")</code></pre>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · 别用 shell=True 拼字符串</p>
+          <p><code>shell=True</code> 配合 f-string 拼接用户输入等于开注入大门；确需 shell 语法时，用 <code>shlex.quote</code> 处理每个参数。</p>
+        </div>
+        <h2>typing 与 __future__：注解基础设施</h2>
+        <p>一句话定位：<code>from __future__ import annotations</code> 让注解延迟求值，写类型标注更轻松、启动更快。</p>
+        <pre><code class="language-python">from __future__ import annotations   # 必须位于文件最前部
+from typing import Sequence
+
+# 好处一：注解延迟求值，方法内可直接引用尚未定义的自身类
+class Node:
+    def next(self) -&gt; Node: ...      # 不再需要写成 "Node"
+
+# 好处二：老版本也能使用新式注解写法，且 import 开销更小
+def span(items: Sequence[int]) -&gt; int:
+    return max(items) - min(items)</code></pre>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · 标准库优先，避免重复造轮子</p>
+          <p>collections、itertools、functools 已覆盖大多数日常抽象；标准库经过充分测试且<strong>零第三方依赖</strong>，应作为默认选择，第三方库仅在标准库确实缺位时引入。语法细节回顾请看 <a href="grammar.html">语法基础</a>；下一步进入建模世界，请阅读 <a href="../machine-learning.html">机器学习</a>。</p>
+        </div>
+</article>
+</div></div></main>
+<script src="../../../assets/mock.js"></script><script src="../../../assets/config.js"></script><script src="../../../assets/api.js"></script>
+<script src="../../../assets/shell.js" defer></script>
+</body>
+</html>

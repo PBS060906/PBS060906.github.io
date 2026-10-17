@@ -15,3 +15,14 @@ Thumbs.db
 
 # ZCode / 工具会话状态
 .mimosa/
+
+# MkDocs 构建产物
+wiki/site/
+wiki/.cache/
+
+# 原型后端运行时产物
+wiki-prototype/server/__pycache__/
+wiki-prototype/server-node/node_modules/
+
+# TRAE HTML 分享包缓存
+.trae-html-share-packages/

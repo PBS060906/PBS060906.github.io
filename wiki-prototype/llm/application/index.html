@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型应用简介 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/application/index" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>模型应用简介</h1>
+        <p>模型应用层把基座能力转化为<strong>产品价值</strong>，核心是两种范式：RAG（外挂知识）与 Agent（自主行动）——前者解决「模型不知道」，后者解决「模型做不到」。</p>
+
+        <h2>内容导航</h2>
+        <div class="grid cards">
+          <ul>
+            <li>
+              <span class="card-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6"/><path d="M11 8v6"/></svg></span>
+              <p><strong>RAG</strong></p>
+              <hr>
+              <p>检索增强生成，让模型「开卷考试」：切分、混合检索、重排与评估。</p>
+              <p class="card-link"><a href="rag.html">开始阅读 <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></p>
+            </li>
+            <li>
+              <span class="card-icon"><svg viewBox="0 0 24 24"><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M12 8V4H8"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></span>
+              <p><strong>Agent</strong></p>
+              <hr>
+              <p>规划、工具调用与多智能体协作：ReAct、记忆与安全。</p>
+              <p class="card-link"><a href="agent.html">开始阅读 <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></p>
+            </li>
+          </ul>
+        </div>
+
+        <h2>应用形态谱系</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>形态</th><th>人机关系</th><th>典型产品</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Chatbot</td><td>一问一答</td><td>ChatGPT</td></tr>
+              <tr><td>Copilot</td><td>人主机辅</td><td>GitHub Copilot</td></tr>
+              <tr><td>Agent</td><td>人给目标，AI 执行</td><td>Coding Agent</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>构建范式</h2>
+        <div class="flow">
+          <span class="flow-node">提示词工程</span><span class="flow-arrow">→</span>
+          <span class="flow-node">上下文工程</span><span class="flow-arrow">→</span>
+          <span class="flow-node">工具调用</span><span class="flow-arrow">→</span>
+          <span class="flow-node">多智能体</span>
+        </div>
+
+        <h2>两种范式怎么选</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>问题特征</th><th>优先范式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>知识过时 / 私有知识缺失</td><td>RAG</td></tr>
+              <tr><td>需要多步操作外部系统</td><td>Agent</td></tr>
+              <tr><td>知识与行动交织（边查边做）</td><td>Agentic RAG / RAG + Agent 组合</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <p>能用提示词解决的不要上 RAG；能用单次工具调用解决的不要上多智能体。复杂度每升一级，调试成本翻倍。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

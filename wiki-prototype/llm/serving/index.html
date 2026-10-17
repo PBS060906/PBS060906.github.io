@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型服务简介 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/serving/index" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>模型服务简介</h1>
+        <p>模型服务把训练好的权重变成<strong>稳定、低延迟、高吞吐</strong>的在线 API。它是模型能力与用户之间的最后一公里：训练侧千辛万苦换来的能力提升，若没有服务侧的支撑，就到不了产品里。</p>
+
+        <h2>内容导航</h2>
+        <ul>
+          <li><a href="inference-optimization.html">推理优化</a> —— Prefill/Decode、KV Cache、PagedAttention、量化与投机解码。</li>
+        </ul>
+
+        <h2>服务质量的四把尺子</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>指标</th><th>含义</th><th>优化方向</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>TTFT</td><td>首 Token 延迟</td><td>Prefill 加速、Prefix Caching</td></tr>
+              <tr><td>TPOT</td><td>每 Token 延迟</td><td>Decode 优化、投机采样</td></tr>
+              <tr><td>Throughput</td><td>整机吞吐</td><td>Continuous Batching</td></tr>
+              <tr><td>Cost</td><td>单位请求成本</td><td>量化、弹性伸缩</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>一次请求的生命周期</h2>
+        <div class="flow">
+          <span class="flow-node">请求到达</span><span class="flow-arrow">→</span>
+          <span class="flow-node">排队调度</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Prefill：处理提示词</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Decode：逐 Token 生成</span><span class="flow-arrow">→</span>
+          <span class="flow-node">流式返回</span>
+        </div>
+        <p>TTFT 与 TPOT 分别由 Prefill、Decode 主导，优化策略要分阶段对症下药——这也是<a href="inference-optimization.html">推理优化</a>全篇的编排主线。</p>
+
+        <h2>推理与训练的本质区别</h2>
+        <div class="admonition abstract">
+          <p class="admonition-title">Abstract</p>
+          <ul>
+            <li>训练求「一次前向的并行」，推理是「逐 Token 的串行生成」；</li>
+            <li>显存瓶颈从权重转移到 <strong>KV Cache</strong>；</li>
+            <li>关键指标从「算得多快」变成「单位显存塞下多少并发请求」；</li>
+            <li>调度粒度从「批」细化到「Decode 迭代步」。</li>
+          </ul>
+        </div>
+
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <ul>
+            <li><strong>云 API</strong>：托管服务开箱即用，成本与定制受限；</li>
+            <li><strong>自建推理</strong>：vLLM / SGLang 等框架 + GPU，可控可优化，是技术团队的主流选择；</li>
+            <li><strong>端侧部署</strong>：llama.cpp / Ollama，隐私友好，算力受限。</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>线性代数 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/math/linear-algebra" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>线性代数</h1>
+        <p>线性代数研究<strong>向量空间与线性映射</strong>，是理解深度学习数学表达的第一工具：模型的参数是矩阵，输入是向量，前向传播就是一串矩阵乘法。</p>
+        <h2>向量与线性组合</h2>
+        <ul>
+          <li>一组向量<strong>线性无关</strong>，指其中任何一个都不能由其余向量线性组合表示；向量空间的一组<strong>基</strong>是一组线性无关、且能张成全空间的向量；</li>
+          <li>点积衡量两个向量的"对齐程度"：<var>a</var> · <var>b</var> = &sum;<sub><var>i</var></sub> <var>a</var><sub><var>i</var></sub><var>b</var><sub><var>i</var></sub> = ‖<var>a</var>‖&thinsp;‖<var>b</var>‖&thinsp;cos&thinsp;&theta;；</li>
+          <li>常用范数：L1 范数 ‖<var>a</var>‖<sub>1</sub> = &sum; |<var>a</var><sub><var>i</var></sub>|（稀疏正则常用），L2 范数 ‖<var>a</var>‖<sub>2</sub> = &radic;&sum;&thinsp;<var>a</var><sub><var>i</var></sub><sup>2</sup>（权重衰减的对象）。</li>
+        </ul>
+        <p>余弦相似度只看方向不看长度，是文本向量检索的默认度量；欧氏距离对长度与方向都敏感：</p>
+        <div class="math-block">cos&thinsp;&theta; = (<var>a</var> · <var>b</var>) / (‖<var>a</var>‖<sub>2</sub>&thinsp;‖<var>b</var>‖<sub>2</sub>)</div>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>运算</th><th>几何意义</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>点积</td><td>投影长度乘以被投影长度，夹角小于 90° 时为正</td></tr>
+              <tr><td>范数</td><td>向量的"长度"</td></tr>
+              <tr><td>归一化</td><td>除以 L2 范数，只保留方向</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>矩阵与变换</h2>
+        <p>矩阵 <var>A</var> &isin; &Ropf;<sup><var>m</var>&times;<var>n</var></sup> 本质是一个从 &Ropf;<sup><var>n</var></sup> 到 &Ropf;<sup><var>m</var></sup> 的线性映射。神经网络的一层就是一次矩阵乘法加激活：</p>
+        <div class="math-block"><var>h</var> = &sigma;(<var>Ax</var> + <var>b</var>)</div>
+        <p>乘法满足结合律 (<var>AB</var>)<var>C</var> = <var>A</var>(<var>BC</var>)，不满足交换律；<var>AB</var> 的几何意义是"先做 <var>B</var> 的变换，再做 <var>A</var> 的变换"；形状必须匹配：(<var>m</var>&times;<var>n</var>)(<var>n</var>&times;<var>k</var>) = <var>m</var>&times;<var>k</var>。</p>
+        <ul>
+          <li>单位矩阵 <var>I</var>：乘法下的"1"，<var>A</var><sup>&minus;1</sup><var>A</var> = <var>I</var>；对角矩阵：各维度独立缩放；</li>
+          <li>正交矩阵 <var>Q</var>（<var>Q</var><sup>T</sup><var>Q</var> = <var>I</var>）：旋转 / 反射，不改变向量长度与夹角，数值计算中深受偏爱；</li>
+          <li>对称矩阵（<var>A</var><sup>T</sup> = <var>A</var>）：特征值全为实数，协方差矩阵就是它。</li>
+        </ul>
+        <p>转置与求逆：(<var>AB</var>)<sup>T</sup> = <var>B</var><sup>T</sup><var>A</var><sup>T</sup>，(<var>AB</var>)<sup>&minus;1</sup> = <var>B</var><sup>&minus;1</sup><var>A</var><sup>&minus;1</sup>。同一向量在不同基下坐标不同：取新基对应的变换矩阵为 <var>P</var>，则新坐标 <var>x</var>&prime; = <var>P</var><sup>&minus;1</sup><var>x</var>——特征分解正是寻找一组"最自然"的基，在新基下变换只是逐方向缩放。</p>
+        <h2>核心概念速览</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>概念</th><th>定义</th><th>直觉</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>行列式</td><td>det(<var>A</var>)</td><td>变换对面积的缩放因子</td></tr>
+              <tr><td>秩</td><td>rank(<var>A</var>)</td><td>变换后空间的维度</td></tr>
+              <tr><td>特征值</td><td><var>Av</var> = &lambda;<var>v</var></td><td>变换下方向不变的向量</td></tr>
+              <tr><td>正定性</td><td><var>x</var><sup>T</sup><var>Ax</var> &gt; 0</td><td>二次曲面的"碗形"保障</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>方阵可逆当且仅当满秩（det(<var>A</var>) &ne; 0）；det(<var>A</var>) = 0 意味着变换把空间"压扁"，信息不可逆地丢失。矩阵的迹等于特征值之和，行列式等于特征值之积，两者都是相似不变量。对称矩阵正定的判据：所有特征值大于 0，或所有顺序主子式大于 0。</p>
+        <h3>核与像</h3>
+        <p>线性映射 <var>A</var> 的<strong>像</strong>（列空间）是所有输出构成的空间，维度即 rank(<var>A</var>)；<strong>核</strong>（零空间）是被映成零向量的输入集合。核越"大"，映射丢失的信息越多——这正是秩亏意味着不可逆的原因。</p>
+        <h2>线性方程组</h2>
+        <p><var>Ax</var> = <var>b</var> 有解当且仅当 rank(<var>A</var>) = rank([<var>A</var> | <var>b</var>])；解唯一当且仅当 <var>A</var> 满秩。数值上避免直接求逆，用消元（LU 分解）或迭代法求解；欠定方程（解不唯一）常加最小范数约束，超定方程（无精确解）退而求最小二乘解。</p>
+        <h2>二次型与正定性</h2>
+        <p>二次型 <var>x</var><sup>T</sup><var>Ax</var> 把矩阵映射为标量；正定性保证它在 <var>x</var> &ne; 0 时恒为正，几何上是开口向上的"碗"——这也是 Hessian 判极值与牛顿法数值合理的根源。</p>
+        <h2>特征值分解与 SVD</h2>
+        <div class="math-block"><var>A</var> = <var>Q</var>&Lambda;<var>Q</var><sup>&minus;1</sup>&ensp;&ensp;<var>A</var> = <var>U</var>&Sigma;<var>V</var><sup>T</sup></div>
+        <ul>
+          <li>特征分解要求方阵，可对角化要求存在 <var>n</var> 个线性无关的特征向量；SVD 对<strong>任意</strong>矩阵成立，是 PCA 的计算核心；</li>
+          <li>奇异值的大小反映对应方向上的"信息量"，截断小奇异值即低秩压缩；对称矩阵可正交对角化 <var>A</var> = <var>Q</var>&Lambda;<var>Q</var><sup>T</sup>；</li>
+          <li>数值上求最大特征值常用幂迭代：反复做矩阵-向量乘法，方向收敛到主特征向量，是谱聚类等大规模谱方法的标配。</li>
+        </ul>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>分解</th><th>形式</th><th>适用范围</th><th>典型用途</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>LU</td><td><var>A</var> = <var>LU</var></td><td>方阵</td><td>解线性方程组</td></tr>
+              <tr><td>QR</td><td><var>A</var> = <var>QR</var></td><td>任意矩阵</td><td>最小二乘</td></tr>
+              <tr><td>特征分解</td><td><var>A</var> = <var>Q</var>&Lambda;<var>Q</var><sup>&minus;1</sup></td><td>可对角化方阵</td><td>谱分析、动力系统</td></tr>
+              <tr><td>SVD</td><td><var>A</var> = <var>U</var>&Sigma;<var>V</var><sup>T</sup></td><td>任意矩阵</td><td>PCA、低秩压缩</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>PCA 的流程用线性代数语言描述：</p>
+        <div class="flow"><span class="flow-node">数据中心化</span><span class="flow-arrow">→</span><span class="flow-node">协方差矩阵</span><span class="flow-arrow">→</span><span class="flow-node">特征分解</span><span class="flow-arrow">→</span><span class="flow-node">取前 k 个特征向量</span></div>
+        <h2>矩阵微积分一瞥</h2>
+        <p>最小二乘的梯度是一切推导的模板：</p>
+        <div class="math-block">&nabla;<sub><var>w</var></sub>&thinsp;‖<var>Xw</var> &minus; <var>y</var>‖<sup>2</sup> = 2<var>X</var><sup>T</sup>(<var>Xw</var> &minus; <var>y</var>)</div>
+        <p>令其为零即得正规方程 <var>X</var><sup>T</sup><var>X</var><var>w</var> = <var>X</var><sup>T</sup><var>y</var>。</p>
+        <h2>常用运算速查</h2>
+        <pre><code class="language-python">import numpy as np
+
+A = np.array([[1., 2.], [3., 4.]])
+np.linalg.det(A)     # 行列式
+np.linalg.eig(A)     # 特征值/特征向量
+np.linalg.qr(A)      # QR 分解
+U, S, Vt = np.linalg.svd(A)   # 奇异值分解
+
+a = np.array([1., 2.])
+b = np.array([3., 4.])
+a @ b                # 点积 = 11
+np.linalg.norm(a)    # L2 范数
+cos = a @ b / (np.linalg.norm(a) * np.linalg.norm(b))  # 余弦相似度
+
+# 解线性方程组 Ax = b（优先于求逆）
+x = np.linalg.solve(A, np.array([1., 2.]))</code></pre>
+        <div class="admonition note">
+          <p class="admonition-title">Note · 几何直觉优先</p>
+          <p>记公式前先想几何：矩阵 = 变换，行列式 = 面积缩放，特征向量 = 变换的"主轴"。</p>
+        </div>
+        <h2>实践要点</h2>
+        <ol>
+          <li>见到矩阵乘法先核对形状：(<var>m</var>&times;<var>n</var>)(<var>n</var>&times;<var>k</var>) = <var>m</var>&times;<var>k</var>，深度学习里多数 shape 错误源于此；</li>
+          <li>判断一个矩阵能不能"压缩"：看奇异值衰减速度，衰减快即可做低秩近似；</li>
+          <li>权重衰减惩罚 L2 范数、L1 正则倾向稀疏解，理解范数即理解正则化；</li>
+          <li>余弦相似度对向量长度不敏感：先归一化再点积，二者等价；</li>
+          <li>数值上避免直接求逆 <var>A</var><sup>&minus;1</sup><var>b</var>，优先用 <code>np.linalg.solve</code> 解线性方程组，更稳定；</li>
+          <li>高维数据的"维度灾难"与秩密切相关：有效信息往往藏在低秩子空间里，降维就是找这个子空间。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JavaScript - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/frontend/javascript" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>JavaScript</h1>
+        <p>JavaScript 是浏览器的编程语言，也是全栈通用语言（Node.js）。它单线程、动态类型、函数是一等公民。本页聚焦语言核心。</p>
+
+        <h2>变量与类型</h2>
+
+        <pre><code class="language-javascript">let count = 0;          // 可变绑定
+const PI = 3.14;        // 不可变绑定，默认用它
+
+typeof 42;        // "number"
+typeof null;      // "object"——历史遗留的误报，判断 null 要用 === null
+
+1 == "1";         // true：隐式类型转换后比较，避免使用
+1 === "1";        // false：类型与值都要相等，一律用 ===</code></pre>
+
+        <p>七种原始类型：<code>number</code> / <code>string</code> / <code>boolean</code> / <code>undefined</code> / <code>null</code> / <code>symbol</code> / <code>bigint</code>，其余皆对象。</p>
+
+        <h2>对象与引用</h2>
+
+        <pre><code class="language-javascript">const a = { x: 1 };
+const b = a;                      // 复制的是引用，b 与 a 是同一个对象
+b.x = 2;
+console.log(a.x);                 // 2
+
+const shallow = { ...a };         // 浅拷贝：嵌套对象仍然共享
+const deep = structuredClone(a);  // 深拷贝，现代浏览器内置</code></pre>
+
+        <p>原始类型按值复制，对象按引用复制——大多数"它怎么自己变了"的 bug 都源于此。</p>
+
+        <h2>函数与作用域</h2>
+
+        <pre><code class="language-javascript">function makeCounter() {
+  let count = 0;        // 被闭包捕获，外部无法直接访问
+  return () =&gt; ++count; // 箭头函数没有自己的 this，继承外层作用域
+}
+const next = makeCounter();
+next(); // 1
+next(); // 2 —— count 一直活着，这就是闭包</code></pre>
+
+        <p>闭包 = 函数 + 它定义时所处的作用域。回调、防抖节流、模块私有变量都依赖它；但被捕获的变量无法回收，滥用会导致内存泄漏。解构与展开让对象、数组的操作更顺手：<code>const { name, ...rest } = user</code>、<code>[...arr1, ...arr2]</code>、<code>{ ...user, age: 18 }</code>。</p>
+
+        <h2>异步模型</h2>
+
+        <p>JS 单线程，耗时操作交给事件循环：同步代码执行完 → 清空微任务（<code>Promise.then</code>）→ 取一个宏任务（<code>setTimeout</code>）→ 循环往复。</p>
+
+        <pre><code class="language-javascript">console.log(1);
+setTimeout(() =&gt; console.log(2));              // 宏任务
+Promise.resolve().then(() =&gt; console.log(3));  // 微任务
+console.log(4);
+// 输出顺序：1 4 3 2 —— 微任务先于宏任务
+
+fetch("/api/data")
+  .then(res =&gt; res.json())
+  .then(data =&gt; render(data))
+  .catch(console.error);
+
+async function load() {           // async/await：等价、更易读
+  try {
+    const res = await fetch("/api/data");
+    render(await res.json());
+  } catch (err) {
+    console.error(err);
+  }
+}</code></pre>
+
+        <p><code>await</code> 只暂停当前 async 函数，不阻塞主线程；相互独立的请求用 <code>Promise.all</code> 并行，连续 <code>await</code> 会白白串行。</p>
+
+        <h2>数组高频方法</h2>
+
+        <pre><code class="language-javascript">const nums = [1, 2, 3, 4];
+nums.map(x =&gt; x * 2);         // [2, 4, 6, 8] —— 一一变换
+nums.filter(x =&gt; x % 2);      // [1, 3] —— 条件筛选
+nums.reduce((a, b) =&gt; a + b); // 10 —— 归约成单值
+nums.find(x =&gt; x &gt; 2);        // 3 —— 第一个满足的元素
+nums.some(x =&gt; x &gt; 3);        // true —— 存在即真
+
+const sorted = [...nums].sort((a, b) =&gt; a - b);  // 数字排序必须传比较器</code></pre>
+
+        <p><code>sort</code> 会<strong>修改原数组</strong>，且默认按字符串比较——<code>[9, 10].sort()</code> 会得到 <code>[10, 9]</code>。</p>
+
+        <h2>类与原型</h2>
+
+        <pre><code class="language-javascript">class Stack {
+  #items = [];                              // # 开头是私有字段，外部访问不到
+  push(x) { this.#items.push(x); }
+  pop() { return this.#items.pop(); }
+  get size() { return this.#items.length; }
+}</code></pre>
+
+        <p><code>class</code> 本质是原型的语法糖：方法挂在原型上，实例通过原型链共享，省内存。</p>
+
+        <h2>DOM 操作速览</h2>
+
+        <pre><code class="language-javascript">const el = document.querySelector("#app");
+el.addEventListener("click", (e) =&gt; {
+  e.target.classList.toggle("active");
+});
+
+const li = document.createElement("li");  // 创建节点
+li.textContent = "新条目";
+document.querySelector("ul").append(li);  // 挂到页面上
+
+// 事件委托：监听器只挂在父元素上，动态新增的列表项也自动生效
+list.addEventListener("click", (e) =&gt; {
+  if (e.target.matches("li")) e.target.classList.toggle("done");
+});</code></pre>
+
+        <p>事件先从外向内<strong>捕获</strong>，再从内向外<strong>冒泡</strong>，监听器默认在冒泡阶段触发。</p>
+
+        <div class="admonition warning">
+          <p class="admonition-title">Warning</p>
+          <p>频繁重排重绘会卡顿：批量修改用 <code>DocumentFragment</code>，列表渲染用事件委托。</p>
+        </div>
+
+        <h2>实践要点</h2>
+
+        <ul>
+          <li>默认 <code>const</code>，需要重新赋值才用 <code>let</code>，不用 <code>var</code>；</li>
+          <li>比较一律 <code>===</code>，别依赖隐式类型转换；</li>
+          <li>相互独立的请求用 <code>Promise.all</code> 并行，别把 <code>await</code> 写成串行；</li>
+          <li>优先用 <code>map</code> / <code>filter</code> / <code>reduce</code> 表达意图，少写命令式 for 循环；</li>
+          <li>DOM 批量操作先离屏（Fragment）再一次性挂载，动态列表用事件委托。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

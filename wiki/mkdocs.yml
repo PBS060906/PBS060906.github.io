@@ -1,0 +1,168 @@
+site_name: 斟知
+site_description: 一个围绕计算机与人工智能的个人知识库
+site_url: ""
+
+repo_url: https://github.com/PBS060906
+repo_name: personal-wiki
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: zh
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    # 自动模式
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/theme-light-dark
+        name: 切换到亮色模式
+    # 亮色模式
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切换到暗色模式
+    # 暗色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: orange
+      toggle:
+        icon: material/weather-night
+        name: 切换到自动模式
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.path
+    - navigation.tracking
+    - navigation.footer
+    - content.code.copy
+    - content.tooltips
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+
+nav:
+  - 首页: index.md
+  - 基础知识:
+      - base/index.md
+      - 人工智能基础:
+          - Python 编程:
+              - base/ai/python/index.md
+              - 语法基础: base/ai/python/grammar.md
+              - 常用标准库: base/ai/python/std-lib.md
+          - 机器学习: base/ai/machine-learning.md
+          - 深度学习: base/ai/deep-learning.md
+      - 计算机科学基础:
+          - 操作系统: base/cs/operating-system.md
+          - 计算机网络: base/cs/computer-network.md
+      - 数学基础:
+          - 高等数学: base/math/advanced-math.md
+          - 线性代数: base/math/linear-algebra.md
+  - 数据结构与算法:
+      - ds-and-algo/index.md
+      - 代码模板 (C++): ds-and-algo/templates.md
+      - 专题解析:
+          - 动态规划: ds-and-algo/topic/dp.md
+          - 图论: ds-and-algo/topic/graph.md
+  - 软件开发:
+      - develop/index.md
+      - 前端:
+          - develop/frontend/index.md
+          - HTML: develop/frontend/html.md
+          - CSS: develop/frontend/css.md
+          - JavaScript: develop/frontend/javascript.md
+      - 后端:
+          - develop/backend/index.md
+          - Python: develop/backend/python.md
+      - 运维:
+          - develop/operation/index.md
+          - Git: develop/operation/git.md
+          - Docker: develop/operation/docker.md
+  - 大模型:
+      - llm/index.md
+      - 模型开发:
+          - llm/development/index.md
+          - Transformer: llm/development/transformer.md
+          - 训练阶段: llm/development/training-stages.md
+      - 模型服务:
+          - llm/serving/index.md
+          - 推理优化: llm/serving/inference-optimization.md
+      - 模型应用:
+          - llm/application/index.md
+          - RAG: llm/application/rag.md
+          - Agent: llm/application/agent.md
+  - 参与贡献: contributing/index.md
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+
+extra_css:
+  - styles/extra.css
+  - https://registry.npmmirror.com/katex/0.16.21/files/dist/katex.min.css
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://registry.npmmirror.com/katex/0.16.21/files/dist/katex.min.js
+  - https://registry.npmmirror.com/katex/0.16.21/files/dist/contrib/auto-render.min.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/PBS060906
+      name: GitHub
+    - icon: fontawesome/regular/envelope
+      link: mailto:example@example.com
+      name: 邮箱
+
+copyright: >
+  &copy; 2026 斟知 · 个人知识库

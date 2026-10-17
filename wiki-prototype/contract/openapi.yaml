@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: 斟知知识库 API
+  version: 1.0.0
+  description: >
+    静态原型（wiki-prototype）的后端接缝契约。前端唯一 API 调用点为 shell.js 的
+    doSearch（file:// 环境自动回退到 mock.js 本地过滤）。站点需挂在域名根路径下。
+servers:
+  - url: http://127.0.0.1:8018
+    description: 本地开发（server/app.py）
+paths:
+  /api/search:
+    get:
+      summary: 全文搜索
+      description: 多词 AND 匹配，标题命中权重 30、分区 10、正文频次封顶 10，按总分倒序。
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+          description: 关键词，空格分隔多词；空串返回空 hits。
+      responses:
+        "200":
+          description: 搜索结果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+  /api/healthz:
+    get:
+      summary: 健康检查
+      responses:
+        "200":
+          description: 服务与索引状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  pages: { type: integer, example: 13 }
+components:
+  schemas:
+    Hit:
+      type: object
+      required: [title, section, url, excerpt]
+      properties:
+        title:   { type: string, example: 语法基础 }
+        section: { type: string, example: 基础知识 }
+        url:     { type: string, example: base/ai/python/grammar.html, description: 站点根相对路径 }
+        excerpt: { type: string, example: ……Python 最核心的语法要素…… }
+    SearchResponse:
+      type: object
+      required: [query, hits, total]
+      properties:
+        query: { type: string }
+        total: { type: integer }
+        hits:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/Hit"

@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>语法基础 - 斟知</title>
+<link rel="icon" href="../../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/ai/python/grammar" data-root="../../../">
+<main class="md-main"><div class="md-main__inner"><div class="md-content">
+<article class="md-typeset md-content__inner">
+        <h1>语法基础</h1>
+        <p>本节梳理 Python 最核心的语法要素，帮助读者快速建立语言的"骨架"认知。建议边读边在解释器里把每个片段敲一遍验证。</p>
+        <h2>变量与类型</h2>
+        <p>Python 是动态类型语言，变量无需声明类型：</p>
+        <pre><code class="language-python">x: int = 42              # 整数
+y: float = 3.14          # 浮点数
+s: str = "hello"         # 字符串
+items: list[int] = [1, 2, 3]   # 列表
+point: tuple[int, int] = (1, 2)  # 元组
+cache: dict[str, int] = {"a": 1} # 字典</code></pre>
+        <div class="admonition note">
+          <p class="admonition-title">Note · 一切皆对象</p>
+          <p>Python 中数字、函数、类本身都是对象，变量只是对象的<strong>名字绑定</strong>，而非"盒子"。</p>
+        </div>
+        <h2>控制流</h2>
+        <pre><code class="language-python">for i in range(10):
+    if i % 2 == 0:
+        continue
+    print(i, end=" ")
+
+# 1 3 5 7 9</code></pre>
+        <p>三元表达式与解包是高频用法：</p>
+        <pre><code class="language-python">parity = "even" if n % 2 == 0 else "odd"
+a, b = b, a               # 交换
+first, *rest = [1, 2, 3]  # first=1, rest=[2, 3]</code></pre>
+        <h2>函数</h2>
+        <pre><code class="language-python">def fib(n: int) -&gt; list[int]:
+    """返回前 n 个斐波那契数。"""
+    seq = [0, 1]
+    for _ in range(n - 2):
+        seq.append(seq[-1] + seq[-2])
+    return seq[:n]</code></pre>
+        <h3>参数传递的要点</h3>
+        <ul>
+          <li>位置参数在前，关键字参数在后；</li>
+          <li>默认参数<strong>避免使用可变对象</strong>；</li>
+        </ul>
+        <pre><code class="language-python"># 反例：默认列表会在多次调用间共享
+def append_to(item, bucket=[]): ...   # 危险
+
+# 正确写法
+def append_to(item, bucket=None):
+    bucket = [] if bucket is None else bucket</code></pre>
+        <h2>面向对象速览</h2>
+        <pre><code class="language-python">class Animal:
+    def __init__(self, name: str):
+        self.name = name
+
+    def speak(self) -&gt; str:
+        raise NotImplementedError
+
+class Dog(Animal):
+    def speak(self) -&gt; str:
+        return f"{self.name}: 汪汪"
+
+print(Dog("旺财").speak())  # 旺财: 汪汪</code></pre>
+        <h2>推导式与生成器</h2>
+        <h3>三种推导式</h3>
+        <p>列表、字典、集合推导式是"过滤 + 变换"的一行写法，代替低效的"先建空容器再循环追加"：</p>
+        <pre><code class="language-python">nums = range(10)
+
+# 列表推导式：变换 + 过滤
+squares = [x * x for x in nums if x % 2 == 0]   # [0, 4, 16, 36, 64]
+
+# 字典 / 集合推导式：只换外层括号
+word = "mississippi"
+counts = {ch: word.count(ch) for ch in set(word)}  # {'m': 1, 'i': 4, ...}
+lengths = {len(w) for w in ["go", "py", "go"]}     # {2}
+
+# 嵌套推导式：矩阵展平（最多两层，再多改普通循环）
+matrix = [[1, 2], [3, 4]]
+flat = [v for row in matrix for v in row]          # [1, 2, 3, 4]</code></pre>
+        <h3>生成器函数与 yield</h3>
+        <p>函数体内出现 <code>yield</code>，它就变成生成器：每次 <code>next()</code> 执行到 yield 处<strong>暂停</strong>，交出一个值，下次从暂停处继续。</p>
+        <pre><code class="language-python">def fib():
+    """无限斐波那契序列：用到哪个算哪个。"""
+    a, b = 0, 1
+    while True:
+        yield a              # 函数在这里暂停
+        a, b = b, a + b
+
+gen = fib()
+print([next(gen) for _ in range(8)])   # [0, 1, 1, 2, 3, 5, 8, 13]
+
+# 生成器表达式：把列表推导式的 [] 换成 ()
+total = sum(x * x for x in range(10**6))   # 不构造百万级的中间列表</code></pre>
+        <h3>惰性求值的优势</h3>
+        <p>列表推导式"先全部算好"，生成器"用到才算"。处理大文件、无限序列、管道式数据流时，惰性求值把内存占用从 O(n) 降到 O(1)：</p>
+        <pre><code class="language-python"># 逐行筛出大日志中的错误行：无论文件多大，内存占用恒定
+def error_lines(path: str):
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if "ERROR" in line:
+                yield line.strip()</code></pre>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · 生成器只能消费一次</p>
+          <p>遍历一遍后生成器就耗尽了，再 <code>len()</code> 或再 <code>for</code> 只会得到空结果；需要反复使用请先 <code>list(gen)</code> 落地。</p>
+        </div>
+        <h2>异常处理</h2>
+        <p>完整的 try 结构分四块：try 包住可能出错的代码，except 分支捕获具体异常，else 只在无异常时执行，finally 无论成败都执行。</p>
+        <pre><code class="language-python">import json
+
+def load_config(path: str) -&gt; dict:
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print("配置不存在，使用默认值")
+        return {}
+    except json.JSONDecodeError as e:
+        print(f"配置格式非法：{e}")
+        return {}
+    else:
+        print("读取成功")          # 仅当 try 块无异常时执行
+    finally:
+        print("加载流程结束")       # 无论走哪个分支都执行，适合做清理
+    return data</code></pre>
+        <h3>自定义异常</h3>
+        <p>业务代码不要到处抛裸的 <code>Exception</code>，而是建立一层异常基类，调用方按类捕获：</p>
+        <pre><code class="language-python">class AppError(Exception):
+    """业务异常基类：调用方只需捕获这一类。"""
+
+class PaymentDeclined(AppError):
+    def __init__(self, reason: str):
+        super().__init__(f"支付被拒绝：{reason}")
+
+def pay(amount: float) -&gt; None:
+    if amount &lt;= 0:
+        raise PaymentDeclined("金额必须为正")
+
+try:
+    pay(-1)
+except AppError as e:            # 按基类捕获，未来新增子类无需改调用方
+    print(e)</code></pre>
+        <h3>EAFP 风格</h3>
+        <p>Python 社区推崇 EAFP（先做再兜底）而非 LBYL（先判断再访问）：</p>
+        <pre><code class="language-python"># LBYL：先判断再访问，判断与访问之间状态可能变化
+if "discount" in config:
+    rate = config["discount"]
+else:
+    rate = 1.0
+
+# EAFP：直接做，出异常再兜底（Python 首选）
+try:
+    rate = config["discount"]
+except KeyError:
+    rate = 1.0</code></pre>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · 捕获要具体</p>
+          <p>裸 <code>except:</code> 会把 <code>KeyboardInterrupt</code>、程序 bug 一并吞掉，线上排查时"无声消失"最致命。至少写 <code>except Exception</code>，并记录日志。</p>
+        </div>
+        <h2>上下文管理器</h2>
+        <p><code>with</code> 的价值是<strong>确定性释放资源</strong>：文件句柄、锁、网络连接不靠垃圾回收，离开 with 块立刻归还。任何类实现 <code>__enter__</code> / <code>__exit__</code> 即可支持 with：</p>
+        <pre><code class="language-python">import time
+
+class Timer:
+    """with Timer(): 包住的代码块自动计时。"""
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self                        # as 变量接住这个返回值
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.elapsed = time.perf_counter() - self.start
+        print(f"耗时 {self.elapsed:.3f} 秒")
+        return False                       # False：异常继续向外抛（True 则吞掉）
+
+with Timer() as t:
+    sum(range(10_000_000))
+print(t.elapsed)</code></pre>
+        <p>简单的场景用 <code>contextlib.contextmanager</code> 更省事，一个生成器搞定：</p>
+        <pre><code class="language-python">from contextlib import contextmanager
+import time
+
+@contextmanager
+def timer(label: str):
+    start = time.perf_counter()            # yield 之前 = __enter__
+    try:
+        yield                              # 暂停点：执行 with 体
+    finally:
+        print(f"{label}: {time.perf_counter() - start:.3f} 秒")  # 之后 = __exit__
+
+with timer("求和"):
+    sum(range(10_000_000))</code></pre>
+        <div class="admonition note">
+          <p class="admonition-title">Note · 打开文件必用 with</p>
+          <p><code>open(...)</code> 不套 with 是新手最常见的资源泄漏来源；异常发生时没有 with 的话，<code>close()</code> 可能永远不会执行。</p>
+        </div>
+        <h2>模块与包</h2>
+        <p>模块是单个 .py 文件，包是带 <code>__init__.py</code> 的目录。import 时解释器按 <code>sys.path</code> 逐级搜索。典型工程布局：</p>
+        <pre><code>myproject/
+├── pyproject.toml
+└── src/
+    └── mypkg/
+        ├── __init__.py      # 包入口：可在此暴露公共 API
+        ├── core.py
+        └── utils/
+            ├── __init__.py
+            └── text.py</code></pre>
+        <pre><code class="language-python"># 绝对导入：从项目根写全路径，推荐，路径清晰
+from mypkg.utils.text import slugify
+
+# 相对导入：只在包内部使用
+from .core import Engine             # 同级
+from ..utils.text import slugify     # 上一级</code></pre>
+        <h3>if __name__ == "__main__"</h3>
+        <p>让一个文件既能当模块被复用，又能当脚本直接跑：</p>
+        <pre><code class="language-python">def main() -&gt; None:
+    print("程序入口")
+
+# 直接运行 python core.py 时 __name__ == "__main__"；
+# 被别人 import 时 __name__ == "core"，main() 不会执行
+if __name__ == "__main__":
+    main()</code></pre>
+        <p>涉及类型检查的导入，用 <code>TYPE_CHECKING</code> 保证运行时零开销，还能打破循环导入：</p>
+        <pre><code class="language-python">from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mypkg.core import Engine    # 仅类型检查器读取，运行时不执行
+
+def build(engine: "Engine") -&gt; None: # 运行时用字符串前向引用
+    engine.start()</code></pre>
+        <h2>类型注解进阶</h2>
+        <p>基础注解（<code>int</code>、<code>list[str]</code>）之外，工程师最常用的是联合类型、协议与泛型：</p>
+        <pre><code class="language-python">from typing import Optional, Protocol, TypeVar
+
+# Optional[X] 就是 "X | None"：找不到就返回 None
+def find_user(uid: int) -&gt; Optional[dict]:
+    ...
+
+# Python 3.10+ 用 | 写联合类型更直观
+def parse(text: str | bytes) -&gt; str:
+    return text.decode() if isinstance(text, bytes) else text
+
+# Protocol：鸭子类型的静态表达，"有这个方法就行"，不看继承血统
+class Serializer(Protocol):
+    def dump(self, obj: object) -&gt; bytes: ...
+
+def save(s: Serializer, obj: object) -&gt; bytes:
+    return s.dump(obj)               # 任何具备 dump 方法的对象都自动满足
+
+# 泛型：在参数与返回值类型间建立关联
+T = TypeVar("T")
+
+def first(items: list[T]) -&gt; T:
+    """传入 list[int] 就推出 int，而非笼统的 object。"""
+    return items[0]</code></pre>
+        <div class="admonition note">
+          <p class="admonition-title">Note · 注解不做运行时校验</p>
+          <p>类型注解默认<strong>不被运行时强制</strong>，交给 mypy / pyright 等静态检查工具。注解不影响程序对错，但公共 API 建议全部标注，等于免费的文档与回归检查。</p>
+        </div>
+        <h2>下一步</h2>
+        <ul>
+          <li>熟悉语法后，移步 <a href="std-lib.html">常用标准库</a> 提升工程效率；</li>
+          <li>想开始建模，请阅读 <a href="../machine-learning.html">机器学习</a>。</li>
+        </ul>
+</article>
+</div></div></main>
+<script src="../../../assets/mock.js"></script><script src="../../../assets/config.js"></script><script src="../../../assets/api.js"></script>
+<script src="../../../assets/shell.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机器学习 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/ai/machine-learning" data-root="../..">
+<main class="md-main"><div class="md-main__inner"><div class="md-content">
+<article class="md-typeset md-content__inner">
+        <h1>机器学习</h1>
+        <p>机器学习的本质：<strong>从数据中归纳规律，用规律预测未知</strong>。本页给出主线脉络、核心算法直觉与一条可落地的工程工作流。</p>
+        <h2>三大类范式</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>范式</th><th>数据形态</th><th>代表算法</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>监督学习</td><td>有标签</td><td>线性回归、决策树、SVM</td></tr>
+              <tr><td>无监督学习</td><td>无标签</td><td>K-Means、PCA</td></tr>
+              <tr><td>强化学习</td><td>环境反馈</td><td>Q-Learning、PPO</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>经典工作流</h2>
+        <div class="flow"><span class="flow-node">数据采集</span><span class="flow-arrow">→</span><span class="flow-node">数据清洗</span><span class="flow-arrow">→</span><span class="flow-node">特征工程</span><span class="flow-arrow">→</span><span class="flow-node">模型训练</span><span class="flow-arrow">→</span><span class="flow-node">模型评估</span><span class="flow-arrow">→</span><span class="flow-node flow-choice">达标?</span><span class="flow-arrow">→</span><span class="flow-node">部署上线</span></div>
+        <h2>关键概念</h2>
+        <h3>过拟合与欠拟合</h3>
+        <ul>
+          <li><strong>欠拟合</strong>：训练误差与测试误差都高 → 模型容量不足，增加特征或模型复杂度；</li>
+          <li><strong>过拟合</strong>：训练误差低而测试误差高 → 正则化、早停、数据增强、交叉验证。</li>
+        </ul>
+        <h3>偏差—方差权衡</h3>
+        <div class="math-block"><var>Error</var> = <var>Bias</var><sup>2</sup> + <var>Variance</var> + <var>Noise</var></div>
+        <p>模型复杂度上升时，偏差下降、方差上升，最优点在中间。</p>
+        <h2>线性回归</h2>
+        <p>假设目标与特征近似线性：<var>ŷ</var> = <var>w</var><sup>T</sup><var>x</var> + <var>b</var>，训练目标是最小化均方误差：</p>
+        <div class="math-block">min<sub><var>w</var>,<var>b</var></sub> Σ<sub><var>i</var></sub> (<var>w</var><sup>T</sup><var>x</var><sub><var>i</var></sub> + <var>b</var> − <var>y</var><sub><var>i</var></sub>)<sup>2</sup></div>
+        <h3>两种求解视角</h3>
+        <ul>
+          <li><strong>正规方程（闭式解）</strong>：令梯度为零直接解出 <var>w</var> = (<var>X</var><sup>T</sup><var>X</var>)<sup>−1</sup><var>X</var><sup>T</sup><var>y</var>，一步到位，但特征多时矩阵求逆又慢又不稳；</li>
+          <li><strong>梯度下降（迭代解）</strong>：沿负梯度方向小步更新 <var>w</var> ← <var>w</var> − <var>η</var>∇<var>L</var>。批量 GD 每步用全量数据（稳但慢），SGD 每步只用一个样本（快但有噪声）——深度学习走的都是后者的变体。</li>
+        </ul>
+        <pre><code class="language-python">from sklearn.linear_model import LinearRegression, SGDRegressor
+
+model = LinearRegression().fit(X, y)           # 正规方程：闭式解
+sgd = SGDRegressor(max_iter=1000).fit(X, y)    # 梯度下降：迭代解</code></pre>
+        <h2>逻辑回归与交叉熵</h2>
+        <p>把线性输出用 sigmoid 压到 (0,1) 当概率：<var>p</var> = σ(<var>w</var><sup>T</sup><var>x</var> + <var>b</var>)。分类的损失用交叉熵：</p>
+        <div class="math-block"><var>L</var> = −Σ<sub><var>i</var></sub> [<var>y</var><sub><var>i</var></sub> log <var>p</var><sub><var>i</var></sub> + (1 − <var>y</var><sub><var>i</var></sub>) log(1 − <var>p</var><sub><var>i</var></sub>)]</div>
+        <div class="admonition question">
+          <p class="admonition-title">Question · 为什么分类不用 MSE？</p>
+          <p>两个原因：其一，MSE 配 sigmoid 是<strong>非凸</strong>函数，存在多个局部极小；其二，当预测错得离谱（<var>y</var> = 1 而 <var>p</var> ≈ 0）时，sigmoid 处于饱和区，MSE 的梯度反而趋近 0——"错得越狠学得越慢"。交叉熵的梯度恰好是 <var>p</var> − <var>y</var>：误差越大，更新越猛。</p>
+        </div>
+        <h2>决策树与集成学习</h2>
+        <ul>
+          <li><strong>Bagging / 随机森林</strong>：对训练集有放回采样出多份数据，各训一棵深树，最后投票平均，思路是<strong>降方差</strong>——多棵"见解不同"的树互相抵消各自的过拟合；随机森林再加特征随机子集，让树之间差异更大；</li>
+          <li><strong>Boosting / XGBoost</strong>：串行训练小树，每棵专门拟合前面所有树的<strong>残差</strong>（梯度），思路是<strong>降偏差</strong>——一步步逼近正确答案；XGBoost 在此之上引入二阶梯度、正则项与列采样，长期霸榜表格数据。</li>
+        </ul>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>场景</th><th>首选模型</th><th>理由</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>表格数据、样本中等、缺失多</td><td>随机森林 / XGBoost</td><td>对量纲、缺失、非线性天然鲁棒</td></tr>
+              <tr><td>关系近似线性、要解释系数</td><td>线性 / 逻辑回归</td><td>可解释、训练快、高维稀疏表现好</td></tr>
+              <tr><td>图像、语音、文本原始信号</td><td>深度学习</td><td>特征需要自动学习而非人工设计</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h2>特征工程</h2>
+        <h3>数值缩放</h3>
+        <p>标准化 <var>z</var> = (<var>x</var> − <var>μ</var>) / <var>σ</var> 或 MinMax 压到 [0,1]。线性模型、KNN、神经网络对量纲敏感，<strong>必须缩放</strong>；树模型逐特征分裂，可不做。</p>
+        <h3>类别编码</h3>
+        <ul>
+          <li><strong>One-Hot</strong>：适合低基数无序类别（城市、性别），线性模型标配；</li>
+          <li><strong>Target 编码</strong>：用类别对应的目标均值替换，适合高基数（用户 ID），但统计量<strong>只能来自训练集</strong>，否则直接泄漏。</li>
+        </ul>
+        <h3>缺失值策略</h3>
+        <p>删行删列（缺得少且无关紧要）、中位数 / 众数填充（对离群点稳健）、追加"是否缺失"指示列（缺失本身有信息量）；树模型还可把缺失当作独立分支交给模型学。</p>
+        <h3>泄漏防范</h3>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · 训练集 fit，测试集只 transform</p>
+          <p>任何统计量（均值、方差、类别目标均值）都必须<strong>只在训练集上 fit</strong>，再应用到验证 / 测试集。"先全量归一化再划分数据"是新手最容易犯、也最难察觉的泄漏。</p>
+        </div>
+        <h2>模型评估</h2>
+        <h3>分类：从混淆矩阵出发</h3>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th></th><th>预测为正</th><th>预测为负</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>实际为正</td><td>TP</td><td>FN（漏报）</td></tr>
+              <tr><td>实际为负</td><td>FP（误报）</td><td>TN</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>指标</th><th>定义</th><th>什么时候看它</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Accuracy</td><td>(TP+TN) / 总数</td><td>类别均衡时的整体正确率</td></tr>
+              <tr><td>Precision</td><td>TP / (TP+FP)</td><td>误报代价高：垃圾邮件误杀正常邮件</td></tr>
+              <tr><td>Recall</td><td>TP / (TP+FN)</td><td>漏报代价高：漏诊、漏掉欺诈</td></tr>
+              <tr><td>F1</td><td>2PR / (P+R)</td><td>Precision 与 Recall 兼顾的单一数字</td></tr>
+              <tr><td>ROC-AUC</td><td>与阈值无关的排序能力</td><td>0.5 等于瞎猜，1.0 完美排序</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admonition question">
+          <p class="admonition-title">Question · 不平衡数据为何不看 Accuracy？</p>
+          <p>负样本占 99% 时，"无脑全预测负"就能拿到 99% 的 Accuracy，却一个正类也没抓到。欺诈检测、疾病筛查等场景应看 Recall、F1 或 PR 曲线。</p>
+        </div>
+        <h3>回归指标</h3>
+        <ul>
+          <li><strong>MAE</strong>：平均绝对误差，对离群点鲁棒；</li>
+          <li><strong>MSE</strong>：平方惩罚，离群点主导优化方向；</li>
+          <li><strong>R²</strong>：相对"只预测均值"这个基线解释了多少方差，可为负。</li>
+        </ul>
+        <h2>交叉验证</h2>
+        <p>K-Fold 把数据分成 K 份，轮流用 1 份做验证、其余做训练，得到 K 个分数取均值——比单次划分稳得多：</p>
+        <pre><code class="language-python">from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+scores = cross_val_score(clf, X, y, cv=cv, scoring="f1_macro")
+print(f"{scores.mean():.3f} ± {scores.std():.3f}")</code></pre>
+        <ul>
+          <li>分类（尤其类别不平衡）→ <strong>StratifiedKFold</strong>：每折保持类别比例一致；</li>
+          <li>回归 → 普通 KFold；</li>
+          <li>时间序列 → TimeSeriesSplit：绝不能用未来数据训练过去。</li>
+        </ul>
+        <h2>最小工作示例</h2>
+        <pre><code class="language-python">from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+X, y = load_iris(return_X_y=True)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=0)
+
+clf = LogisticRegression(max_iter=1000).fit(X_tr, y_tr)
+print(accuracy_score(y_te, clf.predict(X_te)))  # ~0.97</code></pre>
+        <div class="admonition warning">
+          <p class="admonition-title">Warning · 常见误区</p>
+          <p>评估指标要在<strong>测试集</strong>上看；把全量数据先归一化再划分会造成数据泄漏。</p>
+        </div>
+        <h2>端到端 Pipeline 示例</h2>
+        <p>把"填充 → 缩放 → 编码 → 模型"串成一个对象，交叉验证时每折<strong>各自重新 fit</strong> 预处理器，从机制上杜绝泄漏：</p>
+        <pre><code class="language-python">from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+num_cols = ["age", "income"]     # 数值列：中位数填充 + 标准化
+cat_cols = ["city", "job"]       # 类别列：众数填充 + One-Hot
+
+preprocess = ColumnTransformer([
+    ("num", Pipeline([
+        ("imp", SimpleImputer(strategy="median")),
+        ("scale", StandardScaler()),
+    ]), num_cols),
+    ("cat", Pipeline([
+        ("imp", SimpleImputer(strategy="most_frequent")),
+        ("onehot", OneHotEncoder(handle_unknown="ignore")),
+    ]), cat_cols),
+])
+
+pipe = Pipeline([
+    ("prep", preprocess),
+    ("clf", LogisticRegression(max_iter=1000)),
+])
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+scores = cross_val_score(pipe, X, y, cv=cv, scoring="roc_auc")
+print(f"AUC = {scores.mean():.3f} ± {scores.std():.3f}")</code></pre>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · Pipeline 是工程习惯的分水岭</p>
+          <p>预处理散落在模型之外的脚本里，迟早会在某次换数据时悄悄泄漏；用 Pipeline 绑定后，保存、加载、上线部署都是同一个对象。</p>
+        </div>
+</article>
+</div></div></main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

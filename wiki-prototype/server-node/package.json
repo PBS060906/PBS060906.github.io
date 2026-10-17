@@ -1,0 +1,15 @@
+{
+  "name": "zhenzhi-wiki-server-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "斟知知识库 Node.js 后端 —— contract/openapi.yaml 的参考实现（与 server/ 的 FastAPI 版等价）",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

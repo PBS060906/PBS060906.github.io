@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>代码模板 (C++) - 斟知</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-section="ds-and-algo" data-page="ds-and-algo/templates" data-root="..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>代码模板 (C++)</h1>
+        <p>本页收录竞赛中最高频的代码模板，均可在 OJ 上直接使用。</p>
+
+        <h2>快速排序</h2>
+
+        <pre><code class="language-cpp">void quickSort(int a[], int l, int r) {
+    if (l &gt;= r) return;
+    int i = l - 1, j = r + 1, x = a[l + r &gt;&gt; 1];
+    while (i &lt; j) {
+        while (a[++i] &lt; x);
+        while (a[--j] &gt; x);
+        if (i &lt; j) swap(a[i], a[j]);
+    }
+    quickSort(a, l, j), quickSort(a, j + 1, r);
+}</code></pre>
+
+        <h2>二分查找</h2>
+
+        <pre><code class="language-cpp">// 找左边界：满足条件的最小位置
+int l = 0, r = n - 1;
+while (l &lt; r) {
+    int mid = l + r &gt;&gt; 1;
+    if (check(mid)) r = mid;
+    else l = mid + 1;
+}</code></pre>
+
+        <h2>单调栈</h2>
+
+        <pre><code class="language-cpp">// 每个元素左侧第一个比它小的元素
+stack&lt;int&gt; stk;
+for (int i = 0; i &lt; n; i++) {
+    while (!stk.empty() &amp;&amp; a[stk.top()] &gt;= a[i]) stk.pop();
+    left[i] = stk.empty() ? -1 : stk.top();
+    stk.push(i);
+}</code></pre>
+
+        <h2>Dijkstra 最短路</h2>
+
+        <pre><code class="language-cpp">vector&lt;int&gt; dijkstra(int s) {
+    priority_queue&lt;PII, vector&lt;PII&gt;, greater&lt;&gt;&gt; pq;
+    dist.assign(n, INF); dist[s] = 0;
+    pq.push({0, s});
+    while (!pq.empty()) {
+        auto [d, u] = pq.top(); pq.pop();
+        if (d &gt; dist[u]) continue;
+        for (auto [v, w] : g[u])
+            if (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                pq.push({dist[v], v});
+            }
+    }
+    return dist;
+}</code></pre>
+
+        <h2>并查集</h2>
+
+        <pre><code class="language-cpp">int find(int x) {
+    return fa[x] == x ? x : fa[x] = find(fa[x]);  // 路径压缩
+}
+
+void unite(int a, int b) { fa[find(a)] = find(b); }</code></pre>
+
+        <h2>进阶模板</h2>
+
+        <p>以下模板覆盖更复杂的场景，建议先手敲一遍，再上 OJ 用对拍数据验证。</p>
+
+        <h3>树状数组（单点加 + 前缀和）</h3>
+
+        <pre><code class="language-cpp">// 适用：单点修改、区间和查询，均为 O(log n)
+int tr[N];
+int lowbit(int x) { return x &amp; -x; }
+void add(int x, int v) {              // 位置 x 加上 v
+    for (; x &lt;= n; x += lowbit(x)) tr[x] += v;
+}
+int query(int x) {                    // 前缀和 [1, x]
+    int s = 0;
+    for (; x; x -= lowbit(x)) s += tr[x];
+    return s;
+}
+// 区间和 [l, r] = query(r) - query(l - 1)</code></pre>
+
+        <h3>线段树（区间和）</h3>
+
+        <pre><code class="language-cpp">// 适用：单点改 + 区间查；区间改需另加懒标记，此处省略
+struct SegTree {
+    long long sum[N &lt;&lt; 2];
+    void pushup(int u) { sum[u] = sum[u &lt;&lt; 1] + sum[u &lt;&lt; 1 | 1]; }
+    void build(int u, int l, int r, int *a) {
+        if (l == r) { sum[u] = a[l]; return; }
+        int mid = l + r &gt;&gt; 1;
+        build(u &lt;&lt; 1, l, mid, a); build(u &lt;&lt; 1 | 1, mid + 1, r, a);
+        pushup(u);
+    }
+    void update(int u, int l, int r, int p, int v) {   // 点 p 加 v
+        if (l == r) { sum[u] += v; return; }
+        int mid = l + r &gt;&gt; 1;
+        if (p &lt;= mid) update(u &lt;&lt; 1, l, mid, p, v);
+        else update(u &lt;&lt; 1 | 1, mid + 1, r, p, v);
+        pushup(u);
+    }
+    long long query(int u, int l, int r, int ql, int qr) {  // 区间和
+        if (ql &lt;= l &amp;&amp; r &lt;= qr) return sum[u];
+        int mid = l + r &gt;&gt; 1; long long s = 0;
+        if (ql &lt;= mid) s += query(u &lt;&lt; 1, l, mid, ql, qr);
+        if (qr &gt; mid) s += query(u &lt;&lt; 1 | 1, mid + 1, r, ql, qr);
+        return s;
+    }
+};</code></pre>
+
+        <h3>拓扑排序（Kahn BFS 版）</h3>
+
+        <pre><code class="language-cpp">// 适用：DAG 依赖排序；出队数不足 n 则存在环
+vector&lt;int&gt; g[N]; int deg[N], q[N];
+bool toposort(int n) {
+    int hh = 0, tt = -1;
+    for (int i = 1; i &lt;= n; i++)
+        if (!deg[i]) q[++tt] = i;     // 入度 0 的点先入队
+    while (hh &lt;= tt) {
+        int u = q[hh++];              // 出队顺序即拓扑序
+        for (int v : g[u])
+            if (--deg[v] == 0) q[++tt] = v;
+    }
+    return tt == n - 1;               // false 表示有环
+}</code></pre>
+
+        <h3>KMP 字符串匹配</h3>
+
+        <pre><code class="language-cpp">// nxt[i]：模式串 p[1..i] 的最长相等前后缀长度；单串匹配 O(n+m)
+for (int i = 2, j = 0; i &lt;= m; i++) {  // 求 nxt 数组
+    while (j &amp;&amp; p[i] != p[j + 1]) j = nxt[j];
+    if (p[i] == p[j + 1]) j++;
+    nxt[i] = j;
+}
+for (int i = 1, j = 0; i &lt;= n; i++) {  // 在文本串 s 中匹配 p
+    while (j &amp;&amp; s[i] != p[j + 1]) j = nxt[j];
+    if (s[i] == p[j + 1]) j++;
+    if (j == m) { /* s 中匹配终点为 i */ j = nxt[j]; }
+}</code></pre>
+
+        <h3>二分图匹配（匈牙利算法）</h3>
+
+        <pre><code class="language-cpp">// 适用：二分图最大匹配，复杂度 O(n·m)；match[v] 为 v 当前的配对点
+int match[N]; bool vis[N];
+bool dfs(int u) {
+    for (int v : g[u])
+        if (!vis[v]) {
+            vis[v] = true;            // 本轮已访问，防止死循环
+            if (!match[v] || dfs(match[v])) { match[v] = u; return true; }
+        }
+    return false;
+}
+int ans = 0;                          // 左部每个点尝试匹配一次
+for (int i = 1; i &lt;= n; i++) {
+    memset(vis, false, sizeof vis);
+    ans += dfs(i);
+}</code></pre>
+
+        <div class="admonition warning">
+          <p class="admonition-title">Warning</p>
+          <ul>
+            <li>大数据量务必开 <code>long long</code> 与快速 I/O（<code>ios::sync_with_stdio(false)</code>）；</li>
+            <li>递归 DFS 注意爆栈，可改显式栈。</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../assets/mock.js"></script><script src="../assets/config.js"></script><script src="../assets/api.js"></script>
+<script src="../assets/shell.js" defer></script>
+</body>
+</html>

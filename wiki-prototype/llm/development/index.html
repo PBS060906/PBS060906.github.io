@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模型开发简介 - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/development/index" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>模型开发简介</h1>
+        <p>模型开发回答三个问题：<strong>模型长什么样、用什么数据怎么训、如何证明它变好了</strong>。三者分别对应架构设计、训练流水线与评测体系，是理解一切大模型工程决策的地基。</p>
+
+        <h2>内容导航</h2>
+        <ul>
+          <li><a href="transformer.html">Transformer</a> —— 架构基石：自注意力、RoPE、GQA/MLA、MoE 与长上下文；</li>
+          <li><a href="training-stages.html">训练阶段</a> —— 完整流程：预训练数据工程 → SFT → RLHF/DPO → 评测。</li>
+        </ul>
+
+        <h2>关键维度</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>维度</th><th>核心命题</th><th>代表概念</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>架构</td><td>如何高效建模长序列</td><td>Attention、RoPE、GQA、MoE</td></tr>
+              <tr><td>数据</td><td>质量与配比决定上限</td><td>清洗、去重、课程配比</td></tr>
+              <tr><td>训练</td><td>稳定性与吞吐</td><td>混合精度、并行策略、loss spike</td></tr>
+              <tr><td>对齐</td><td>有用、诚实、无害</td><td>SFT、RLHF、DPO</td></tr>
+              <tr><td>评测</td><td>通用能力与安全性</td><td>Benchmark、人类偏好</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>技术脉络</h2>
+        <div class="flow">
+          <span class="flow-node">RNN / LSTM</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Transformer（2017）</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Decoder-only 路线</span><span class="flow-arrow">→</span>
+          <span class="flow-node">Scaling Laws 驱动</span><span class="flow-arrow">→</span>
+          <span class="flow-node">现代 LLM：MoE、长上下文、推理模型</span>
+        </div>
+
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <p>Scaling Laws 是这个领域最底层的经验规律：算力、数据、参数的扩展遵循可预测的损失下降曲线，一切工程决策都在为「更高效的 Scaling」服务——架构改动的意义，往往是让单位算力产出更多有效 Token。</p>
+        </div>
+
+        <h2>阅读收益</h2>
+        <ol>
+          <li>看懂主流开源模型（Llama、Qwen、DeepSeek）的架构配置与各自改进点；</li>
+          <li>说清一条 LLM 从预训练到对齐的完整训练流水线，以及每阶段的数据与目标；</li>
+          <li>面对评测报告，分辨真实提升与刷榜污染；</li>
+          <li>为后续「模型服务」「模型应用」两节打好概念地基。</li>
+        </ol>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

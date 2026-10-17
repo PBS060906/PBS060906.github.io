@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>参与贡献 - 斟知</title>
+<link rel="icon" href="../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-section="contributing" data-page="contributing/index" data-root="..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>参与贡献</h1>
+        <p>本知识库采用开源协作模式，欢迎任何形式的贡献。</p>
+
+        <h2>贡献方式</h2>
+
+        <ol>
+          <li><strong>纠错</strong>：发现笔误、错误结论，直接提 Issue 或 PR；</li>
+          <li><strong>补充</strong>：为现有页面补充示例、参考链接；</li>
+          <li><strong>新增</strong>：撰写新页面，与现有风格保持一致。</li>
+        </ol>
+
+        <h2>工作流</h2>
+
+        <pre><code class="language-bash"># 1. Fork 并克隆仓库
+git clone https://github.com/PBS060906/personal-wiki.git
+
+# 2. 本地预览
+pip install mkdocs-material
+mkdocs serve
+
+# 3. 提交修改
+git checkout -b docs/fix-typo
+git commit -m "docs: 修复 xx 页面笔误"
+git push origin docs/fix-typo
+# 4. 在 GitHub 上发起 Pull Request
+</code></pre>
+
+        <h2>写作规范</h2>
+
+        <div class="admonition abstract">
+          <p class="admonition-title">Abstract</p>
+          <ul>
+            <li>每个页面有明确的 <code>h1</code> 标题与导航位置；</li>
+            <li>概念解释 + 示例代码 + 参考链接 三段式结构；</li>
+            <li>代码块标注语言，能运行的示例优先；</li>
+            <li>数学公式使用 <code>$...$</code> / <code>$$...$$</code> 定界符。</li>
+          </ul>
+        </div>
+
+        <h2>致谢</h2>
+
+        <p>感谢每一位提出建议与修改的伙伴，你们的反馈让这个知识库变得更好。</p>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../assets/mock.js"></script><script src="../assets/config.js"></script><script src="../assets/api.js"></script>
+<script src="../assets/shell.js" defer></script>
+</body>
+</html>

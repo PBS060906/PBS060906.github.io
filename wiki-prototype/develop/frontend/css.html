@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CSS - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="develop" data-page="develop/frontend/css" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>CSS</h1>
+        <p>CSS 负责"怎么摆、长什么样"。现代布局问题的标准答案只有两个：<strong>Flexbox 与 Grid</strong>——掌握盒模型与这两者，就能解决绝大多数布局需求。</p>
+
+        <h2>盒模型</h2>
+
+        <pre><code class="language-css">* { box-sizing: border-box; }  /* 统一按边框盒计算，强烈推荐 */</code></pre>
+
+        <p>默认的 <code>content-box</code> 下，<code>width</code> 只含内容区，加了 padding 元素反而变宽；<code>border-box</code> 让 <code>width</code> 直接等于最终宽度，心算成本最低，已是业界默认。</p>
+
+        <h2>选择器优先级</h2>
+
+        <p>从低到高：元素 &lt; 类 &lt; ID &lt; 行内样式；<code>!important</code> 强制登顶但应避免滥用。浏览器用三元组 <code>(ID数, 类数, 元素数)</code> 比较：<code>(1,0,0)</code> 永远大于 <code>(0,99,99)</code>；优先级相同则后写的胜出。后代选择器 <code>nav a</code>、并集 <code>a, .btn</code> 只是组合用法，不产生新的优先级等级。</p>
+
+        <h2>层叠与继承</h2>
+
+        <ul>
+          <li><strong>继承</strong>：<code>color</code>、<code>font</code>、<code>line-height</code> 等文本属性默认沿 DOM 树向下传递；<code>width</code>、<code>margin</code>、<code>border</code> 等盒模型属性不继承；</li>
+          <li><strong>层叠</strong>：多个规则命中同一元素时，先比优先级，再比源码顺序——这就是"层叠样式表"名字的由来。</li>
+        </ul>
+
+        <h2>常用单位</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>单位</th><th>含义</th><th>典型场景</th></tr></thead>
+            <tbody>
+              <tr><td><code>px</code></td><td>固定像素</td><td>边框、阴影等不随缩放的细节</td></tr>
+              <tr><td><code>rem</code></td><td>根元素字号</td><td>字号与间距，改根字号全局缩放</td></tr>
+              <tr><td><code>%</code></td><td>相对父元素</td><td>宽度、高度</td></tr>
+              <tr><td><code>vw</code> / <code>vh</code></td><td>视口宽 / 高的 1%</td><td>全屏区块、大标题</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Flexbox 速成</h2>
+
+        <pre><code class="language-css">.container {
+  display: flex;
+  justify-content: space-between;  /* 主轴对齐 */
+  align-items: center;             /* 交叉轴对齐 */
+  gap: 1rem;                       /* 子项间距，替代 margin 技巧 */
+}</code></pre>
+
+        <p>适用<strong>一维</strong>布局：导航栏、工具条、卡片行。主轴方向由 <code>flex-direction</code> 决定（默认水平）；子项设 <code>flex: 1</code> 平分剩余空间，<code>flex: none</code> 保持内容宽。</p>
+
+        <h2>Grid 速成</h2>
+
+        <pre><code class="language-css">.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));  /* 列宽不小于 240px，能塞几列塞几列 */
+  gap: 1rem;
+}</code></pre>
+
+        <p>适用<strong>二维</strong>布局：整页框架、瀑布卡片。上面一行 CSS 就实现了自适应卡片网格。</p>
+
+        <h2>水平垂直居中</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>方案</th><th>写法</th></tr></thead>
+            <tbody>
+              <tr><td>Flex</td><td><code>display: flex; justify-content: center; align-items: center;</code></td></tr>
+              <tr><td>Grid</td><td><code>display: grid; place-items: center;</code>（最短写法）</td></tr>
+              <tr><td>绝对定位</td><td>父元素 <code>position: relative</code>，子元素 <code>position: absolute; inset: 0; margin: auto;</code> 配合确定宽高</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>定位 position</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead><tr><th>取值</th><th>参照物</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>static</code></td><td>无</td><td>默认值，正常文档流</td></tr>
+              <tr><td><code>relative</code></td><td>自身原位置</td><td>偏移后原占位保留</td></tr>
+              <tr><td><code>absolute</code></td><td>最近的非 static 祖先</td><td>脱离文档流，常配合 relative 父元素</td></tr>
+              <tr><td><code>fixed</code></td><td>视口</td><td>滚动不动，如悬浮按钮</td></tr>
+              <tr><td><code>sticky</code></td><td>滚动容器</td><td>到阈值前正常，之后吸住，如表头</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>伪类与伪元素</h2>
+
+        <pre><code class="language-css">a:hover { color: var(--primary); }                   /* 悬停反馈 */
+input:focus { outline: 2px solid var(--primary); }   /* 焦点环，别随意去掉 */
+li:first-child { font-weight: bold; }                /* 结构伪类 */
+.quote::before { content: "\201C"; }                 /* 伪元素：插入装饰内容 */</code></pre>
+
+        <p><code>::before</code> / <code>::after</code> 常用来画徽标、分隔线等纯装饰，让装饰性内容不进 HTML 结构。</p>
+
+        <h2>CSS 变量</h2>
+
+        <pre><code class="language-css">:root {
+  --primary: #4051b5;          /* 全局主题色 */
+  --radius: 8px;
+}
+.button {
+  background: var(--primary);
+  border-radius: var(--radius);
+}</code></pre>
+
+        <p>换主题只改一处；JS 还能用 <code>element.style.setProperty()</code> 动态修改变量。</p>
+
+        <h2>响应式三件套</h2>
+
+        <ol>
+          <li>流式单位：<code>%</code>、<code>rem</code>、<code>vw</code>；</li>
+          <li>媒体查询：<code>@media (max-width: 768px) { ... }</code>；</li>
+          <li>自适应图片：<code>max-width: 100%; height: auto;</code></li>
+        </ol>
+
+        <pre><code class="language-css">/* 移动端优先：默认样式即小屏样式 */
+.cards { grid-template-columns: 1fr; }
+@media (min-width: 768px) {      /* 平板及以上 */
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1200px) {     /* 桌面 */
+  .cards { grid-template-columns: repeat(3, 1fr); }
+}</code></pre>
+
+        <div class="admonition tip">
+          <p class="admonition-title">Tip</p>
+          <p>基础样式面向小屏写，用 <code>min-width</code> 媒体查询逐级增强，比反过来省事得多。</p>
+        </div>
+
+        <h2>实践要点</h2>
+
+        <ul>
+          <li>全局 <code>border-box</code>，从根源上消除宽度计算烦恼；</li>
+          <li>动手前先判断：一维用 Flex，二维用 Grid；</li>
+          <li>主题色、圆角、间距收敛为 CSS 变量，避免魔法数字满天飞；</li>
+          <li>选择器保持两三层以内，靠优先级而非 <code>!important</code> 解决冲突；</li>
+          <li>调试布局用 DevTools 的盒模型面板，直接看 content/padding/border/margin 的实际值。</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

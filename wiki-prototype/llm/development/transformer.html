@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transformer - 斟知</title>
+<link rel="icon" href="../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/styles.css">
+</head>
+<body data-section="llm" data-page="llm/development/transformer" data-root="../..">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>Transformer</h1>
+        <p>Transformer 以<strong>自注意力</strong>取代循环结构，实现完全并行的序列建模，是大模型的标准架构。</p>
+
+        <h2>整体结构</h2>
+
+        <p>整体为「Token Embedding + 位置编码 → Transformer Block × N → 最终层归一化 → LM Head → 下一 Token 概率」；每个 Block 内部依次为多头自注意力、残差连接 + RMSNorm、FFN / SwiGLU、残差连接 + RMSNorm。</p>
+        <div class="flow">
+          <span class="flow-node">Token Embedding</span><span class="flow-arrow">→</span>
+          <span class="flow-node">多头自注意力</span><span class="flow-arrow">→</span>
+          <span class="flow-node">残差连接 + RMSNorm</span><span class="flow-arrow">→</span>
+          <span class="flow-node">FFN / SwiGLU</span><span class="flow-arrow">→</span>
+          <span class="flow-node">残差连接 + RMSNorm × N 层</span><span class="flow-arrow">→</span>
+          <span class="flow-node">LM Head</span>
+        </div>
+
+        <h2>自注意力机制</h2>
+
+        <div class="math-block">
+          <var>Attention</var>(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>QK</var><sup>&top;</sup> / &radic;<var>d<sub>k</sub></var>) <var>V</var>
+        </div>
+
+        <ul>
+          <li><var>Q</var>、<var>K</var>、<var>V</var> 由输入线性变换得到；</li>
+          <li><var>&radic;d<sub>k</sub></var> 缩放防止点积过大导致 softmax 饱和；</li>
+          <li>多头机制让不同子空间各自关注不同模式。</li>
+        </ul>
+
+        <h3>最小实现</h3>
+
+        <pre><code class="language-python">import torch, torch.nn.functional as F
+
+def attention(q, k, v, mask=None):
+    d_k = q.size(-1)
+    scores = q @ k.transpose(-2, -1) / d_k ** 0.5
+    if mask is not None:
+        scores = scores.masked_fill(mask, float("-inf"))
+    return F.softmax(scores, dim=-1) @ v
+</code></pre>
+
+        <h3>多头注意力的形状注释</h3>
+
+        <p>多头最易出错的是形状变换：拆头与合并各对应一次 <code>view + transpose</code>，全程盯着四维形状即可。</p>
+        <pre><code class="language-python">def multi_head_attention(x, n_heads, Wq, Wk, Wv, Wo, mask=None):
+    # x: [batch, seq, dim]，Wq/Wk/Wv/Wo: [dim, dim]
+    B, S, D = x.shape
+    d_head = D // n_heads
+    q = x @ Wq  # [batch, seq, dim]
+    k = x @ Wk  # [batch, seq, dim]
+    v = x @ Wv  # [batch, seq, dim]
+    # 拆头：把 dim 维切成 n_heads 份，头部维提到第 1 维
+    q = q.view(B, S, n_heads, d_head).transpose(1, 2)  # [batch, heads, seq, dim]
+    k = k.view(B, S, n_heads, d_head).transpose(1, 2)  # [batch, heads, seq, dim]
+    v = v.view(B, S, n_heads, d_head).transpose(1, 2)  # [batch, heads, seq, dim]
+    out = attention(q, k, v, mask)                     # [batch, heads, seq, dim]
+    out = out.transpose(1, 2).reshape(B, S, D)         # 合并多头: [batch, seq, dim]
+    return out @ Wo
+</code></pre>
+
+        <h2>三种架构谱系</h2>
+
+        <p>同样的注意力模块，按掩码方式与堆叠结构组成三种谱系，分别对应不同的任务形态：</p>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>架构</th><th>代表模型</th><th>注意力掩码</th><th>适用任务</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>encoder-only</td><td>BERT、RoBERTa</td><td>双向（全序列可见）</td><td>文本分类、信息抽取、句向量</td></tr>
+              <tr><td>decoder-only</td><td>GPT、Llama、Qwen、DeepSeek</td><td>因果掩码（只看过去）</td><td>对话、代码、推理等生成任务</td></tr>
+              <tr><td>encoder-decoder</td><td>T5、BART</td><td>编码双向 + 解码因果 + 交叉注意力</td><td>翻译、摘要等序列到序列转换</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>如今生成模型主流是 <strong>decoder-only</strong>，原因有三：其一，它与 next-token prediction 训练目标天然统一，不存在"预训练目标与使用方式脱节"的问题；其二，只有一种注意力、结构最简单，规模化与工程实现成本最低；其三，因果注意力正是 KV Cache、批处理等推理优化的前提，整个推理生态都围绕它建设。实践反复验证：数据与规模足够时，decoder-only 在理解类任务上同样不落下风。</p>
+
+        <h2>KV Cache</h2>
+
+        <p>自回归生成时，历史 token 的 K、V 不再变化。把每层每头的 K/V 缓存下来，每步只需计算<strong>新 token 的 Q 和新 K/V</strong>，避免对整段前缀重复做注意力——这就是 KV Cache，Decode 阶段能快起来的根本原因。</p>
+
+        <div class="math-block">
+          <var>KV</var> ≈ 2 × <var>层数</var> × <var>n</var><sub>heads</sub> × <var>d</var><sub>head</sub> × <var>seq_len</var> × <var>dtype</var> 字节
+        </div>
+
+        <ul>
+          <li>因子 2 对应 K 与 V 两份缓存，显存随上下文长度与并发数<strong>线性增长</strong>；</li>
+          <li>长上下文 + 高并发时 KV Cache 会反超权重，成为显存第一大头；</li>
+          <li>下表"注意力"一行的 GQA / MLA，本质就是减少 KV 头数来压缩这项开销。</li>
+        </ul>
+
+        <p>动手算一笔账：7B 模型（32 层、32 头、head_dim=128）fp16 下每 token 的 KV Cache = 2 × 32 × 32 × 128 × 2 字节 = 512 KB，一条 4096 token 的序列约 2 GB，16 路并发仅 KV Cache 就要 32 GB——这正是 <a href="../serving/inference-optimization.html">模型推理与服务</a> 一节讨论 PagedAttention 与量化的动机。</p>
+
+        <h2>训练目标</h2>
+
+        <p>目标极简：对语料每个位置做 <strong>next-token prediction</strong>，用交叉熵最大化真实下一个 token 的似然：</p>
+
+        <div class="math-block">
+          <var>L</var>(<var>θ</var>) = −∑<sub><var>t</var></sub> log <var>P</var><sub><var>θ</var></sub>(<var>x</var><sub><var>t</var></sub> | <var>x</var><sub>&lt;<var>t</var></sub>)
+        </div>
+
+        <p>causal mask 在训练中同时解决两件事：保证位置 <var>t</var> 只能看到过去（与推理时的信息可见性一致），又让整段序列一次前向时所有位置的损失<strong>并行</strong>计算。由此形成鲜明对比：<strong>训练并行、推理串行</strong>——训练时掩码代替了逐个生成，推理时必须一个 token 接一个 token，KV Cache 才应运而生。</p>
+
+        <h2>Scaling Law</h2>
+
+        <p>损失随参数量、数据量、算力按幂律平滑下降。Chinchilla（2022）给出关键修正：<strong>给定算力预算，参数量与训练数据量应同比扩张</strong>——此前多数模型"参数偏大、数据偏少"，并未训到最优。由此确立了"小模型 + 充分数据"的路线：7B 级模型在数万亿 token 上训练后，性价比远超同算力训练的更大模型，也解释了开源小模型为何能逼近早期大模型。</p>
+
+        <h2>预训练与后训练</h2>
+
+        <p>一个能对话的模型不是一次训出来的，而是流水线的产物：</p>
+        <div class="flow">
+          <span class="flow-node">预训练</span><span class="flow-arrow">→</span>
+          <span class="flow-node">SFT 指令微调</span><span class="flow-arrow">→</span>
+          <span class="flow-node">RLHF / DPO 偏好对齐</span><span class="flow-arrow">→</span>
+          <span class="flow-node">对齐后模型</span>
+        </div>
+        <ul>
+          <li><strong>预训练</strong>：海量语料上的 next-token prediction，注入语言与世界知识，占总算力 95% 以上；</li>
+          <li><strong>SFT</strong>：数万到百万条高质量指令数据微调，让模型学会"听指令、按格式回答"；</li>
+          <li><strong>RLHF / DPO</strong>：用人类偏好信号做对齐，压低有害输出、提升回答质量；</li>
+          <li><strong>对齐后模型</strong>：发布上线，进入 <a href="../serving/inference-optimization.html">模型推理与服务</a> 环节。</li>
+        </ul>
+
+        <h2>关键演进</h2>
+
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>方向</th><th>代表工作</th><th>解决的问题</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>归一化</td><td>LayerNorm → RMSNorm</td><td>简化计算、训练更稳</td></tr>
+              <tr><td>激活</td><td>FFN → SwiGLU</td><td>更好的性能/参数比</td></tr>
+              <tr><td>位置编码</td><td>绝对 → RoPE</td><td>外推长上下文</td></tr>
+              <tr><td>注意力</td><td>MHA → GQA / MLA</td><td>压缩 KV Cache</td></tr>
+              <tr><td>稀疏化</td><td>Dense → MoE</td><td>参数扩展不求激活</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="admonition note">
+          <p class="admonition-title">Note</p>
+          <p>解码器训练时对上三角位置加 <var>-&infin;</var> 掩码，保证每个位置只能看到过去——这是自回归生成的关键。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../assets/mock.js"></script><script src="../../assets/config.js"></script><script src="../../assets/api.js"></script>
+<script src="../../assets/shell.js" defer></script>
+</body>
+</html>

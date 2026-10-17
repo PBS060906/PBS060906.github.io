@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Python 编程专栏简介 - 斟知</title>
+<link rel="icon" href="../../../assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../../assets/styles.css">
+</head>
+<body data-section="base" data-page="base/ai/python/index" data-root="../../../">
+<main class="md-main">
+  <div class="md-main__inner">
+    <div class="md-content">
+      <article class="md-typeset md-content__inner">
+        <h1>Python 编程专栏简介</h1>
+        <p>Python 是人工智能领域的第一语言：语法接近伪代码、生态覆盖数据处理与建模全流程，从写脚本工具到训练模型都离不开它。本专栏从语法基础出发，逐步过渡到常用标准库与科学计算生态，帮助读者建立扎实的工程能力。</p>
+        <h2>内容导航</h2>
+        <ul>
+          <li><a href="grammar.html"><strong>语法基础</strong></a>——变量与类型、控制流、函数、面向对象等核心语法，理解"一切皆对象"；</li>
+          <li><a href="std-lib.html"><strong>常用标准库</strong></a>——<code>collections</code>、<code>itertools</code>、<code>pathlib</code>、<code>functools</code> 等开箱即用的工具。</li>
+        </ul>
+        <h2>学习路径</h2>
+        <div class="flow"><span class="flow-node">语法基础</span><span class="flow-arrow">→</span><span class="flow-node">常用标准库</span><span class="flow-arrow">→</span><span class="flow-node">科学计算生态</span><span class="flow-arrow">→</span><span class="flow-node">机器学习</span><span class="flow-arrow">→</span><span class="flow-node">深度学习</span></div>
+        <ol>
+          <li><strong>语法基础</strong>：能独立写出函数与类，绕开可变默认参数等常见陷阱；</li>
+          <li><strong>常用标准库</strong>：熟练使用 <code>collections</code>、<code>pathlib</code>，少写重复轮子；</li>
+          <li><strong>科学计算生态</strong>：<code>numpy</code> 做数组运算、<code>pandas</code> 处理表格数据、<code>matplotlib</code> 出图；</li>
+          <li><strong>进入算法</strong>：基础扎实后，继续阅读 <a href="../machine-learning.html">机器学习</a> 与 <a href="../deep-learning.html">深度学习</a>。</li>
+        </ol>
+        <div class="admonition tip">
+          <p class="admonition-title">Tip · Jupyter 适合探索，脚本适合工程</p>
+          <p>数据探索用 Jupyter Notebook 更直观；正式项目建议写成 <code>.py</code> 模块，便于版本管理与测试。</p>
+        </div>
+        <h2>环境搭建</h2>
+        <div class="admonition example">
+          <p class="admonition-title">Example · 推荐的环境管理方式</p>
+          <pre><code class="language-bash"># 使用 uv 创建虚拟环境（推荐）
+uv venv .venv
+. .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# 安装依赖
+uv pip install numpy pandas matplotlib</code></pre>
+        </div>
+        <h2>版本选择</h2>
+        <div class="md-typeset__scrollwrap">
+          <table>
+            <thead>
+              <tr><th>版本</th><th>状态</th><th>建议</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>3.10</td><td>维护期</td><td>可用，部分新特性缺失</td></tr>
+              <tr><td>3.12</td><td>稳定</td><td><strong>推荐</strong>，性能与生态兼容性好</td></tr>
+              <tr><td>3.13</td><td>最新</td><td>尝鲜可用，个别库可能未适配</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+</main>
+<script src="../../../assets/mock.js"></script><script src="../../../assets/config.js"></script><script src="../../../assets/api.js"></script>
+<script src="../../../assets/shell.js" defer></script>
+</body>
+</html>
